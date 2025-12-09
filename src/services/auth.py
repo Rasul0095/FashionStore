@@ -4,11 +4,41 @@ import jwt
 from datetime import datetime, timedelta, timezone
 
 from src.config import settings
+from src.schemas.users import UserAddRequest, UserAdd, UserLogin, User
 from src.services.base import BaseService
 
 
 class AuthService(BaseService):
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    async def get_me(self, user_id: int):
+        return await self.db.users.get_one_or_none(id=user_id)
+
+    async def register_user(self, data: UserAddRequest, role_name: str = "user"):
+        if await self.db.users.get_by_email(data.email):
+            raise ValueError("Такой email уже существует")
+
+        role = await self.db.roles.get_by_name(role_name)
+        if not role:
+            raise ValueError(f"Роль '{role_name}' не существует")
+        hashed_password = AuthService().hashed_password(data.password)
+        user_data = UserAdd(
+            role_id=role.id,
+            first_name=data.first_name,
+            last_name=data.last_name,
+            email=data.email,
+            hashed_password=hashed_password,
+            created_at=datetime.utcnow())
+        await self.db.users.add(user_data)
+        await self.db.commit()
+
+    async def login_user(self, data: UserLogin):
+        user = await self.db.users.get_with_hashed_password(email=data.email)
+        access_token = self.create_access_token({"user_id": user.id})
+        return access_token
+
+    async def get_user_permissions(self, user_id: int):
+        return await self.db.users.get_current_user_role_for_permissions(user_id)
 
     def create_access_token(self, data: dict):
         to_encode = data.copy()
