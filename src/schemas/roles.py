@@ -7,7 +7,7 @@ class RoleName(str, Enum):
     USER = "user"
 
 class RoleAdd(BaseModel):
-    name: str
+    name: RoleName
     description: str | None = None
     permissions: dict = {}
 
