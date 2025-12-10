@@ -1,10 +1,12 @@
+from os import access
+
 from passlib.context import CryptContext
 from fastapi import HTTPException
 import jwt
 from datetime import datetime, timedelta, timezone
 
 from src.config import settings
-from src.schemas.users import UserAddRequest, UserAdd, UserLogin, User
+from src.schemas.users import UserAddRequest, UserAdd, UserLogin
 from src.services.base import BaseService
 
 
@@ -12,7 +14,13 @@ class AuthService(BaseService):
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     async def get_me(self, user_id: int):
-        return await self.db.users.get_one_or_none(id=user_id)
+        user = await self.db.users.get_one_or_none(id=user_id)
+        return {
+            "id": user.id,
+            "email": user.email,
+            "role_id": user.role_id,
+            "first_name": user.first_name,
+            "last_name": user.last_name}
 
     async def register_user(self, data: UserAddRequest, role_name: str = "user"):
         if await self.db.users.get_by_email(data.email):
@@ -34,8 +42,19 @@ class AuthService(BaseService):
 
     async def login_user(self, data: UserLogin):
         user = await self.db.users.get_with_hashed_password(email=data.email)
-        access_token = self.create_access_token({"user_id": user.id})
-        return access_token
+        tokens = self.create_tokens_pair({
+            "user_id": user.id,
+            "role_id": user.role_id,
+            "email": user.email,})
+        return tokens
+
+    async def refresh_tokens(self, refresh_token: str):
+        payload = self.verify_token_type(refresh_token, "refresh")
+        user = await self.db.users.get_one(id=payload["user_id"])
+        return self.create_tokens_pair({
+            "user_id": user.id,
+            "role_id": user.role_id,
+            "email": user.email, })
 
     async def get_user_permissions(self, user_id: int):
         return await self.db.users.get_current_user_role_for_permissions(user_id)
@@ -43,7 +62,7 @@ class AuthService(BaseService):
     def create_access_token(self, data: dict):
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp":expire})
+        to_encode.update({"exp":expire, "type": "access"})
         encoded_jwt = jwt.encode(
             to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
         return encoded_jwt
@@ -64,7 +83,7 @@ class AuthService(BaseService):
         """Проверяет тип токена"""
         payload = self.decode_token(token)
         if payload.get("type") != token_type:
-            raise HTTPException(status_code=401, detail=f"Invalid token type")
+            raise HTTPException(status_code=401, detail=f"Недопустимый тип токена")
         return payload
 
     def verify_password(self, plain_password, hashed_password):

@@ -28,7 +28,7 @@ DBDep = Annotated[DBManager, Depends(get_db)]
 async def permission_checker(
     db: DBDep,
     permission: Permission,
-    user_id: int  = Depends(get_current_user_id),
+    user_id: int  = UserIdDep
 ):
     # Получаем роль пользователя
     permissions = await AuthService(db).get_user_permissions(user_id=user_id)
@@ -38,4 +38,6 @@ async def permission_checker(
         raise HTTPException(403, f"Требуется {permission.value} разрешение")
 
     return user_id
+
+PermDep = Annotated[int, Depends(permission_checker)]
 
