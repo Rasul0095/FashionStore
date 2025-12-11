@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import  AsyncSession
 from sqlalchemy import select, insert, update, delete
 
 from src.database import Base
+from src.models import UserOrm, RoleOrm
+
 
 class BaseRepository:
     model = None
@@ -41,3 +43,26 @@ class BaseRepository:
         result = await self.session.execute(stmt)
         model = result.scalars().one()
         return self.schemas.model_validate(model, from_attributes=True)
+
+    async def add_bulk(self, data: [BaseModel]):
+        add_stmt = insert(self.model).values([item.model_dump() for item in data])
+        await self.session.execute(add_stmt)
+
+    async def exit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
+        stmt = (
+            update(self.model)
+            .filter_by(**filter_by)
+            .values(**data.model_dump(exclude_unset=exclude_unset))
+        )
+        await self.session.execute(stmt)
+
+    async def delete(self, **filter_by):
+        role = await self.get_one(**filter_by)  # сначала находим роль
+        if not role:
+            return
+
+        delete_o2m_stmt = delete(UserOrm).filter(UserOrm.role_id == role.id)
+        await self.session.execute(delete_o2m_stmt)
+
+        stmt = delete(self.model).filter_by(**filter_by)
+        await self.session.execute(stmt)
