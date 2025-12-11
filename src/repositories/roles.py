@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from src.models import RoleOrm, UserOrm
+from src.models import RoleOrm
 from src.repositories.base import BaseRepository
 from src.schemas.roles import Role
 

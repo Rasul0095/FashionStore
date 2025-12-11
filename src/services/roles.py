@@ -1,6 +1,6 @@
 from src.core.permissions import ROLE_PERMISSIONS
 from src.services.base import BaseService
-from src.schemas.roles import RoleAdd
+from src.schemas.roles import RoleAdd, RoleUpdate, RolePatch
 
 
 class RoleService(BaseService):
@@ -25,3 +25,15 @@ class RoleService(BaseService):
         role = await self.db.roles.add(role_data)
         await self.db.commit()
         return role
+
+    async def exit_role(self, role_name: str, data: RoleUpdate):
+        await self.db.roles.exit(data, exclude_unset=True, name=role_name)
+        await self.db.commit()
+
+    async def partial_change_role(self, role_name: str, data: RolePatch, exclude_unset: bool = False):
+        await self.db.roles.exit(data, exclude_unset=exclude_unset, name=role_name)
+        await self.db.commit()
+
+    async def delete_role(self, role_name: str):
+        await self.db.roles.delete(name=role_name)
+        await self.db.commit()
