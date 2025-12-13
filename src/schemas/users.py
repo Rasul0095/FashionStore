@@ -6,7 +6,6 @@ class UserAddRequest(BaseModel):
     last_name: str
     email: EmailStr
     password: str
-    created_at: datetime
 
 class UserLogin(BaseModel):
     email: EmailStr

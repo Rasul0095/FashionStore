@@ -56,13 +56,6 @@ class BaseRepository:
         )
         await self.session.execute(stmt)
 
-    async def delete(self, **filter_by):
-        role = await self.get_one(**filter_by)  # сначала находим роль
-        if not role:
-            return
-
-        delete_o2m_stmt = delete(UserOrm).filter(UserOrm.role_id == role.id)
-        await self.session.execute(delete_o2m_stmt)
-
+    async def delete(self, *filter, **filter_by):
         stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(stmt)

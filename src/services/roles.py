@@ -35,5 +35,4 @@ class RoleService(BaseService):
         await self.db.commit()
 
     async def delete_role(self, role_name: str):
-        await self.db.roles.delete(name=role_name)
-        await self.db.commit()
+        await self.db.roles.delete_role_with_current_name(role_name)
