@@ -1,3 +1,4 @@
+from src.repositories.addresses import AddressesRepository
 from src.repositories.roles import RolesRepository
 from src.repositories.users import UsersRepository
 
@@ -9,8 +10,10 @@ class DBManager:
     async def __aenter__(self):
         self.session = self.session_factory()
 
+        self.addresses = AddressesRepository(self.session)
         self.roles = RolesRepository(self.session)
         self.users = UsersRepository(self.session)
+
 
         return self
 

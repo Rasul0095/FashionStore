@@ -5,7 +5,7 @@ from src.models.orders import OrderOrm
 from src.models.roles import RoleOrm
 from src.models.users import UserOrm
 from src.models.reviews import ReviewOrm
-from src.models.adderesses import AddressOrm
+from src.models.addresses import AddressOrm
 from src.models.brands import BrandOrm
 from src.models.categories import CategoryOrm
 from src.models.products import ProductOrm
