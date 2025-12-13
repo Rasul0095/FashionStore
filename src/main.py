@@ -6,12 +6,14 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from fastapi import FastAPI
 from src.api.addresses import router as router_address
+from src.api.categories import router as router_category
 from src.api.roles import router as router_role
 from src.api.auth import router as router_auth
 
 app = FastAPI()
 
 app.include_router(router_address)
+app.include_router(router_category)
 app.include_router(router_role)
 app.include_router(router_auth)
 

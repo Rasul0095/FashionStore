@@ -1,4 +1,5 @@
 from src.repositories.addresses import AddressesRepository
+from src.repositories.categories import CategoriesRepository
 from src.repositories.roles import RolesRepository
 from src.repositories.users import UsersRepository
 
@@ -11,6 +12,7 @@ class DBManager:
         self.session = self.session_factory()
 
         self.addresses = AddressesRepository(self.session)
+        self.categories = CategoriesRepository(self.session)
         self.roles = RolesRepository(self.session)
         self.users = UsersRepository(self.session)
 

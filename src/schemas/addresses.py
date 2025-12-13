@@ -14,7 +14,7 @@ class AddressesAdd(BaseModel):
     postal_code: str
     country: str
 
-class Addresses(AddressesAdd):
+class Address(AddressesAdd):
     id: int
 
 class AddressesUpdate(BaseModel):
