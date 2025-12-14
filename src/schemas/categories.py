@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 
 
@@ -14,3 +14,8 @@ class CategoriesAdd(BaseModel):
 
 class Category(CategoriesAdd):
     id: int
+
+class CategoriesPatch(BaseModel):
+    name: str | None = Field(None)
+    slug: str | None = Field(None)
+    product_type: ProductType | None = Field(None)

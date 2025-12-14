@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body
 from src.api.dependencies import DBDep
-from src.schemas.categories import CategoriesAdd
+from src.schemas.categories import CategoriesAdd, CategoriesPatch
 from src.services.categories import CategoryService
 
 
@@ -47,3 +47,28 @@ async def add_category(
     category = await CategoryService(db).add_category(category_data)
     return {"status": "OK", "data": category}
 
+
+@router.put("/{category_id}")
+async def exit_category(
+    db:DBDep,
+    category_id: int,
+    category_data: CategoriesPatch,
+):
+    await CategoryService(db).update_category(category_data, category_id)
+    return {"status": "OK"}
+
+
+@router.patch("/{category_id}")
+async def partial_change_category(
+    db:DBDep,
+    category_id: int,
+    category_data: CategoriesPatch,
+):
+    await CategoryService(db).update_category(category_data, category_id, exclude_unset=True)
+    return {"status": "OK"}
+
+
+@router.delete("/{category_id}")
+async def delete_category(db:DBDep, category_id: int):
+    await CategoryService(db).delete_category(category_id)
+    return {"status": "OK"}
