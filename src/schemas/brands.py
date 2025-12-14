@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BrandsAdd(BaseModel):
@@ -7,4 +7,10 @@ class BrandsAdd(BaseModel):
 
 class Brand(BrandsAdd):
     id: int
+
+class BrandsPatch(BaseModel):
+    name: str | None = Field(None)
+    description: str | None = Field(None)
+
+
 
