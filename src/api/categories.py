@@ -21,27 +21,100 @@ async def add_category(
     db: DBDep,
     category_data: CategoriesAdd = Body(
         openapi_examples={
-            "Одежда": {
+            "Верхняя одежда": {
                 "value": {
                     "name": "Верхняя одежда",
                     "slug": "outerwear",
                     "product_type": "clothing"
                 }
             },
-            "Обувь": {
+            "Футболки": {
+                "summary": "Категория футболок",
+                "value": {
+                    "name": "Футболки",
+                    "slug": "t-shirts",
+                    "product_type": "clothing"
+                }
+            },
+            "Джинсы": {
+                "summary": "Категория джинсов",
+                "value": {
+                    "name": "Джинсы",
+                    "slug": "jeans",
+                    "product_type": "clothing"
+                }
+            },
+            "Куртки": {
+                "summary": "Категория курток",
+                "value": {
+                    "name": "Куртки",
+                    "slug": "jackets",
+                    "product_type": "clothing"
+                }
+            },
+            "Кроссовки": {
                 "value": {
                     "name": "Кроссовки",
                     "slug": "sneakers",
                     "product_type": "footwear"
                 }
             },
-            "Аксессуары": {
+            "Беговые кроссовки": {
+                "summary": "Категория беговой обуви",
+                "value": {
+                    "name": "Беговые кроссовки",
+                    "slug": "running-sneakers",
+                    "product_type": "footwear"
+                }
+            },
+            "Туфли": {
+                "summary": "Категория туфель",
+                "value": {
+                    "name": "Туфли",
+                    "slug": "shoes",
+                    "product_type": "footwear"
+                }
+            },
+            "Сандалии": {
+                "summary": "Категория сандалий",
+                "value": {
+                    "name": "Сандалии",
+                    "slug": "sandals",
+                    "product_type": "footwear"
+                }
+            },
+            "Сумки": {
+                "summary": "Категория сумок",
                 "value": {
                     "name": "Сумки",
                     "slug": "bags",
                     "product_type": "accessory"
                 }
-            }
+            },
+            "Ремни": {
+                "summary": "Категория ремней",
+                "value": {
+                    "name": "Ремни",
+                    "slug": "belts",
+                    "product_type": "accessory"
+                }
+            },
+            "Шарфы": {
+                "summary": "Категория шарфов",
+                "value": {
+                    "name": "Шарфы",
+                    "slug": "scarves",
+                    "product_type": "accessory"
+                }
+            },
+            "Головные уборы": {
+                "summary": "Категория головных уборов",
+                "value": {
+                    "name": "Головные уборы",
+                    "slug": "hats",
+                    "product_type": "accessory"
+                }
+            },
         }
     )):
     category = await CategoryService(db).add_category(category_data)
