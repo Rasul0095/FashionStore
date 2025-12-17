@@ -1,8 +1,12 @@
-from fastapi import HTTPException
-from sqlalchemy.exc import NoResultFound
+import uuid
+from pathlib import Path
+import aiofiles
 from datetime import datetime
 
-from src.schemas.products import ProductsAddRequest, ProductsAdd
+from fastapi import HTTPException, UploadFile
+from sqlalchemy.exc import NoResultFound
+
+from src.schemas.products import ProductsAddRequest, ProductsAdd, ProductImagesUpdate
 from src.services.base import BaseService
 from src.api.dependencies import PaginationDep
 from src.repositories.utils import generate_sku
@@ -29,13 +33,16 @@ class ProductService(BaseService):
             raise HTTPException(404, "Товар не найден")
         return await self.db.products.get_one_or_none(id=product_id)
 
-    async def add_product(self, category_id: int, brand_id: int, data: ProductsAddRequest):
+    async def add_product(self,
+        category_id: int,
+        brand_id: int,
+        data: ProductsAddRequest,):
         try:
             await self.db.categories.get_one(id=category_id)
         except NoResultFound:
             raise HTTPException(404, "Категория не найдена")
         try:
-            await self.db.categories.get_one(id=brand_id)
+            await self.db.brands.get_one(id=brand_id)  # ← должно быть brands, не categories!
         except NoResultFound:
             raise HTTPException(404, "Бренд не найден")
         sku = generate_sku(data.product_type, category_id, brand_id)
@@ -45,7 +52,40 @@ class ProductService(BaseService):
             category_id=category_id,
             sku=sku,
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),)
+            updated_at=datetime.utcnow(),
+        )
         product = await self.db.products.add(product_data)
         await self.db.commit()
         return product
+
+    async def add_product_images(self, product_id: int, images: list[UploadFile]):
+        try:
+            await self.db.products.get_one(id=product_id)
+        except NoResultFound:
+            raise HTTPException(404, "Товар не найден")
+
+        UPLOAD_DIR = Path("src/static/images")
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        # Сохраняем файлы локально
+        saved_paths = []
+        for img in images:
+            data = await img.read()
+            ext = Path(img.filename).suffix or '.jpg'
+            unique_name = f"{product_id}_{uuid.uuid4()}{ext}"
+            file_path = UPLOAD_DIR / unique_name
+
+            async with aiofiles.open(file_path, 'wb') as f:
+                await f.write(data)
+
+            saved_paths.append(str(file_path))
+
+        update_data = ProductImagesUpdate(images=saved_paths)
+        # Обновляем БД
+        await self.db.products.exit(
+            update_data,
+            exclude_unset=True,
+            id=product_id
+        )
+        await self.db.commit()
+
+        return {"saved_paths": saved_paths, "product_id": product_id}

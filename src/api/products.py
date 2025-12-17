@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, Body, UploadFile, File
 from src.api.dependencies import DBDep, PaginationDep
 from src.schemas.products import ProductsAddRequest
 from src.services.products import ProductService
@@ -158,3 +158,17 @@ async def add_product(
 ):
     product = await ProductService(db).add_product(category_id, brand_id, product_data)
     return {"status": "OK", "data": product}
+
+
+@router.post("/{product_id}/images")
+async def add_product_images(
+        product_id: int,
+        db: DBDep,
+        images: list[UploadFile] = File(..., description="Список изображений товара"),
+):
+    await ProductService(db).add_product_images(product_id, images)
+    return {
+        "status": "OK",
+        "message": f"Загрузка {len(images)} изображений начата",
+        "product_id": product_id
+    }

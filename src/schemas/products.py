@@ -40,3 +40,6 @@ class ProductsAdd(BaseModel):
 
 class Product(ProductsAdd):
     id: int
+
+class ProductImagesUpdate(BaseModel):
+    images: list[str]
