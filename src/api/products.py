@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Body, UploadFile, File
 from src.api.dependencies import DBDep, PaginationDep
-from src.schemas.products import ProductsAddRequest
+from src.schemas.products import ProductsAddRequest, ProductsPatch
 from src.services.products import ProductService
 
 router = APIRouter(prefix="/products", tags=["Товары"])
@@ -162,13 +162,47 @@ async def add_product(
 
 @router.post("/{product_id}/images")
 async def add_product_images(
-        product_id: int,
-        db: DBDep,
-        images: list[UploadFile] = File(..., description="Список изображений товара"),
+    product_id: int,
+    db: DBDep,
+    images: list[UploadFile] = File(..., description="Список изображений товара"),
 ):
     await ProductService(db).add_product_images(product_id, images)
     return {
         "status": "OK",
         "message": f"Загрузка {len(images)} изображений начата",
-        "product_id": product_id
-    }
+        "product_id": product_id}
+
+
+@router.put("/{product_id}")
+async def exit_product(
+    db: DBDep,
+    product_id: int,
+    category_id: int,
+    brand_id: int,
+    product_data: ProductsPatch
+):
+    await ProductService(db).update_product(product_id, category_id, brand_id, product_data)
+    return {"status": "OK"}
+
+
+@router.patch("/{product_id}")
+async def exit_product(
+    db: DBDep,
+    product_id: int,
+    category_id: int,
+    brand_id: int,
+    product_data: ProductsPatch):
+
+    await ProductService(db).update_product(
+        product_id,
+        category_id,
+        brand_id,
+        product_data,
+        exclude_unset=True)
+    return {"status": "OK"}
+
+
+@router.delete("/{product_id}")
+async def delete_product(db: DBDep, product_id: int):
+    await ProductService(db).delete_product(product_id)
+    return {"status": "OK"}

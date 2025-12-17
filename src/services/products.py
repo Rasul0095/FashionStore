@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import NoResultFound
 
-from src.schemas.products import ProductsAddRequest, ProductsAdd, ProductImagesUpdate
+from src.schemas.products import ProductsAddRequest, ProductsAdd, ProductImagesUpdate, ProductsPatch
 from src.services.base import BaseService
 from src.api.dependencies import PaginationDep
 from src.repositories.utils import generate_sku
@@ -89,3 +89,42 @@ class ProductService(BaseService):
         await self.db.commit()
 
         return {"saved_paths": saved_paths, "product_id": product_id}
+
+    async def update_product(self,
+        product_id: int,
+        category_id: int,
+        brand_id: int,
+        data: ProductsPatch,
+        exclude_unset: bool = False):
+        try:
+            await self.db.categories.get_one(id=category_id)
+        except NoResultFound:
+            raise HTTPException(404, "Категория не найдена")
+        try:
+            await self.db.brands.get_one(id=brand_id)  # ← должно быть brands, не categories!
+        except NoResultFound:
+            raise HTTPException(404, "Бренд не найден")
+        try:
+            await self.db.products.get_one(id=product_id)
+        except NoResultFound:
+            raise HTTPException(404, "Товар не найден")
+        await self.db.products.exit(data, id=product_id, exclude_unset=exclude_unset)
+        await self.db.commit()
+
+    async def delete_product(self, product_id: int):
+        try:
+            product = await self.db.products.get_one(id=product_id)
+        except NoResultFound:
+            raise HTTPException(404, "Товар не найден")
+
+        # await self.db.cart_items.delete(product_id=product_id)
+        # await self.db.order_items.delete(product_id=product_id)
+        # await self.db.reviews.delete(product_id=product_id)
+
+        if product.images:
+            import os
+            for image_path in product.images:
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+        await self.db.products.delete(id=product_id)
+        await self.db.commit()

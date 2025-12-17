@@ -43,3 +43,17 @@ class Product(ProductsAdd):
 
 class ProductImagesUpdate(BaseModel):
     images: list[str]
+
+class ProductsPatch(BaseModel):
+    name: str | None = None
+    price: float | None = None
+    stock_quantity: int | None = None
+    product_type: ProductType | None = None
+    description: str | None = None
+    size: str | None = None
+    color: str | None = None
+    gender: str | None = None
+    material: str | None = None
+    sku: str | None = None
+    is_active: bool | None = None
+    images: list[str] | None = None

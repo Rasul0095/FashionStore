@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Body
+from fastapi_cache.decorator import cache
+
 from src.api.dependencies import DBDep
 from src.schemas.categories import CategoriesAdd, CategoriesPatch
 from src.services.categories import CategoryService
@@ -7,6 +9,7 @@ from src.services.categories import CategoryService
 router = APIRouter(prefix="/categories", tags=["Категории"])
 
 @router.get("")
+@cache(expire=10)
 async def get_categories(db:DBDep):
     return await CategoryService(db).get_categories()
 
