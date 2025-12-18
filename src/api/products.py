@@ -186,7 +186,7 @@ async def exit_product(
 
 
 @router.patch("/{product_id}")
-async def exit_product(
+async def partial_change_product(
     db: DBDep,
     product_id: int,
     category_id: int,

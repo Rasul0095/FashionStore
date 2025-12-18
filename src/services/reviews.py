@@ -6,7 +6,7 @@ import aiofiles
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import NoResultFound
 
-from src.schemas.reviews import ReviewsAddRequest, ReviewsAdd, ReviewImagesUpdate
+from src.schemas.reviews import ReviewsAddRequest, ReviewsAdd, ReviewImagesUpdate, ReviewsPatch
 from src.services.base import BaseService
 from src.api.dependencies import UserIdDep
 
@@ -35,7 +35,7 @@ class ReviewService(BaseService):
 
     async def add_review_images(self, user_id: UserIdDep, review_id: int, images: list[UploadFile]):
         try:
-            await self.db.products.get_one(id=review_id)
+            await self.db.reviews.get_one(id=review_id)
         except NoResultFound:
             raise HTTPException(404, "Отзыв не найден")
 
@@ -64,4 +64,35 @@ class ReviewService(BaseService):
         await self.db.commit()
 
         return {"saved_paths": saved_paths, "product_id": review_id}
+
+    async def update_review(self,
+        user_id: UserIdDep,
+        review_id: int,
+        data: ReviewsPatch,
+        exclude_unset: bool = False):
+        try:
+            await self.db.reviews.get_one(id=review_id)
+        except NoResultFound:
+            raise HTTPException(404, "Отзыв не найден")
+
+        await self.db.reviews.exit(data, exclude_unset=exclude_unset, id=review_id, user_id=user_id)
+        await self.db.commit()
+
+    async def delete_review(self, review_id: int):
+        try:
+            review = await self.db.reviews.get_one(id=review_id)
+        except NoResultFound:
+            raise HTTPException(404, "Отзыв не найден")
+
+        if review.images:
+            import os
+            for image_path in review.images:
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+
+        await self.db.reviews.delete(id=review_id)
+        await self.db.commit()
+
+
+
 

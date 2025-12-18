@@ -19,3 +19,8 @@ class Review(ReviewsAdd):
 
 class ReviewImagesUpdate(BaseModel):
     images: list[str]
+
+class ReviewsPatch(BaseModel):
+    rating: int | None = None
+    comment: str | None = None
+    images: list[str] | None = None

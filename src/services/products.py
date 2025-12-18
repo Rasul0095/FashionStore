@@ -119,7 +119,7 @@ class ProductService(BaseService):
 
         # await self.db.cart_items.delete(product_id=product_id)
         # await self.db.order_items.delete(product_id=product_id)
-        # await self.db.reviews.delete(product_id=product_id)
+        await self.db.reviews.delete(product_id=product_id)
 
         if product.images:
             import os

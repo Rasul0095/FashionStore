@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, UploadFile, File
 
 from src.api.dependencies import DBDep, UserIdDep
-from src.schemas.reviews import ReviewsAddRequest
+from src.schemas.reviews import ReviewsAddRequest, ReviewsPatch
 from src.services.reviews import ReviewService
 
 
@@ -64,3 +64,31 @@ async def add_review_images(
         "status": "OK",
         "message": f"Загрузка {len(images)} изображений начата",
         "product_id": review_id}
+
+
+@router.put("/{review_id}")
+async def exit_review(
+    db: DBDep,
+    review_id: int,
+    user_id: UserIdDep,
+    review_data: ReviewsPatch
+):
+    await ReviewService(db).update_review(user_id, review_id, review_data)
+    return {"status": "OK"}
+
+
+@router.patch("/{review_id}")
+async def partial_change_review(
+    db: DBDep,
+    review_id: int,
+    user_id: UserIdDep,
+    review_data: ReviewsPatch
+):
+    await ReviewService(db).update_review(user_id, review_id, review_data, exclude_unset=True)
+    return {"status": "OK"}
+
+
+@router.delete("/{review_id}")
+async def delete_review(db: DBDep, review_id: int):
+    await ReviewService(db).delete_review(review_id)
+    return {"status": "OK"}
