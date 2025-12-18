@@ -160,7 +160,7 @@ async def add_product(
     return {"status": "OK", "data": product}
 
 
-@router.post("/{product_id}/images")
+@router.post("/{product_id}/images-products")
 async def add_product_images(
     product_id: int,
     db: DBDep,

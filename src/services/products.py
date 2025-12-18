@@ -64,7 +64,7 @@ class ProductService(BaseService):
         except NoResultFound:
             raise HTTPException(404, "Товар не найден")
 
-        UPLOAD_DIR = Path("src/static/images")
+        UPLOAD_DIR = Path("src/static/images-products")
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         # Сохраняем файлы локально
         saved_paths = []
