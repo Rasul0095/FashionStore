@@ -31,7 +31,22 @@ class RoleService(BaseService):
         await self.db.commit()
 
     async def partial_change_role(self, role_name: str, data: RolePatch, exclude_unset: bool = False):
-        await self.db.roles.exit(data, exclude_unset=exclude_unset, name=role_name)
+        role = await self.db.roles.get_one(name=role_name)
+        update_dict = {}
+
+        if data.description is not None:
+            update_dict["description"] = data.description
+
+        if data.permissions is not None:
+            current_permissions = role.permissions or {}
+            current_permissions.update(data.permissions)
+            update_dict["permissions"] = current_permissions
+
+        if not update_dict:
+            return  # ничего не обновляем
+        update_data = RolePatch(**update_dict)
+
+        await self.db.roles.exit(update_data, exclude_unset=exclude_unset, name=role_name)
         await self.db.commit()
 
     async def delete_role(self, role_name: str):

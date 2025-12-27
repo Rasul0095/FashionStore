@@ -34,18 +34,22 @@ async def get_db():
 DBDep = Annotated[DBManager, Depends(get_db)]
 
 async def permission_checker(
+    permission: Permission,  # параметр!
     db: DBDep,
-    permission: Permission,
-    user_id: int  = UserIdDep
+    user_id: UserIdDep
 ):
-    # Получаем роль пользователя
-    permissions = await AuthService(db).get_user_permissions(user_id=user_id)
-
-    # Проверяем есть ли право
-    if permission.value not in permissions:
+    permissions_dict = await AuthService(db).get_user_permissions(user_id=user_id)
+    if not permissions_dict.get(permission.value, False):  # ← проверяем ключ в словаре
         raise HTTPException(403, f"Требуется {permission.value} разрешение")
 
     return user_id
 
-PermDep = Annotated[int, Depends(permission_checker)]
+# Фабрика зависимостей
+def require_permission(permission: Permission):
+    async def dependency(
+        db: DBDep,
+        user_id: UserIdDep
+    )  -> int:
+        return await permission_checker(permission, db, user_id)
+    return Depends(dependency)
 
