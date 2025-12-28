@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Query, Body, UploadFile, File
-from src.api.dependencies import DBDep, PaginationDep
+
+from src.api.dependencies import DBDep, PaginationDep, require_permission
+from src.core.permissions import Permission
 from src.schemas.products import ProductsAddRequest, ProductsPatch
 from src.services.products import ProductService
 
@@ -12,12 +14,15 @@ async def get_products(
     name: str | None = Query(None, description="Название товара"),
     description: str | None = Query(None, description="Описание товара"),
     product_type: str | None = Query(None, description="Тип товара (clothing, footwear, accessory)"),
-):
+    user_id: int = require_permission(Permission.VIEW_PRODUCTS),):
     return await ProductService(db).get_products(pagination, name, description, product_type)
 
 
 @router.get("{product_id}")
-async def get_product(db:DBDep, product_id: int):
+async def get_product(
+    db:DBDep,
+    product_id: int,
+    user_id: int = require_permission(Permission.VIEW_PRODUCTS),):
     return await ProductService(db).get_product(product_id)
 
 
@@ -26,6 +31,7 @@ async def add_product(
     db: DBDep,
     category_id: int,
     brand_id: int,
+    user_id: int = require_permission(Permission.CREATE_PRODUCTS),
     product_data: ProductsAddRequest = Body(
         openapi_examples={
             "Футболка (Одежда)": {
@@ -165,7 +171,7 @@ async def add_product_images(
     product_id: int,
     db: DBDep,
     images: list[UploadFile] = File(..., description="Список изображений товара"),
-):
+    user_id: int = require_permission(Permission.MANAGE_PRODUCT_IMAGES),):
     await ProductService(db).add_product_images(product_id, images)
     return {
         "status": "OK",
@@ -179,8 +185,8 @@ async def exit_product(
     product_id: int,
     category_id: int,
     brand_id: int,
-    product_data: ProductsPatch
-):
+    product_data: ProductsPatch,
+    user_id: int = require_permission(Permission.EDIT_PRODUCTS),):
     await ProductService(db).update_product(product_id, category_id, brand_id, product_data)
     return {"status": "OK"}
 
@@ -191,7 +197,8 @@ async def partial_change_product(
     product_id: int,
     category_id: int,
     brand_id: int,
-    product_data: ProductsPatch):
+    product_data: ProductsPatch,
+    user_id: int = require_permission(Permission.EDIT_PRODUCTS),):
 
     await ProductService(db).update_product(
         product_id,
@@ -203,6 +210,9 @@ async def partial_change_product(
 
 
 @router.delete("/{product_id}")
-async def delete_product(db: DBDep, product_id: int):
+async def delete_product(
+    db: DBDep,
+    product_id: int,
+    user_id: int = require_permission(Permission.DELETE_PRODUCTS),):
     await ProductService(db).delete_product(product_id)
     return {"status": "OK"}

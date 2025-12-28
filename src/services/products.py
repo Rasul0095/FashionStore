@@ -1,15 +1,12 @@
-import uuid
-from pathlib import Path
-import aiofiles
-from datetime import datetime
-
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import NoResultFound
+from datetime import datetime
 
 from src.schemas.products import ProductsAddRequest, ProductsAdd, ProductImagesUpdate, ProductsPatch
 from src.services.base import BaseService
 from src.api.dependencies import PaginationDep
-from src.repositories.utils import generate_sku
+from src.repositories.utils import generate_sku, save_uploaded_files
+
 
 class ProductService(BaseService):
     async def get_products(self,
@@ -64,20 +61,10 @@ class ProductService(BaseService):
         except NoResultFound:
             raise HTTPException(404, "Товар не найден")
 
-        UPLOAD_DIR = Path("src/static/images-products")
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        # Сохраняем файлы локально
-        saved_paths = []
-        for img in images:
-            data = await img.read()
-            ext = Path(img.filename).suffix or '.jpg'
-            unique_name = f"{product_id}_{uuid.uuid4()}{ext}"
-            file_path = UPLOAD_DIR / unique_name
-
-            async with aiofiles.open(file_path, 'wb') as f:
-                await f.write(data)
-
-            saved_paths.append(str(file_path))
+        saved_paths = await save_uploaded_files(
+            files=images,
+            prefix=f"review_{product_id}",
+            upload_dir="src/static/images-products")
 
         update_data = ProductImagesUpdate(images=saved_paths)
         # Обновляем БД

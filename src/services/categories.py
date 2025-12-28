@@ -32,5 +32,10 @@ class CategoryService(BaseService):
         except NoResultFound:
             raise HTTPException(404, "Категория не найдена")
 
+        products = await self.db.products.get_all(category_id=category_id)
+        for product in products:
+            await self.db.reviews.delete(product_id=product.id)
+
+        await self.db.products.delete(category_id=category_id)
         await self.db.categories.delete(id=category_id)
         await self.db.commit()

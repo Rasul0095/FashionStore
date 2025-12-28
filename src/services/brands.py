@@ -10,6 +10,10 @@ class BrandService(BaseService):
         return await self.db.brands.get_all()
 
     async def get_brand(self, brand_id: int):
+        try:
+            await self.db.brands.get_one(id=brand_id)
+        except NoResultFound:
+            raise HTTPException(404, "Бренд не найден")
         return await self.db.brands.get_one(id=brand_id)
 
     async def add_brand(self, data: BrandsAdd):
@@ -19,7 +23,7 @@ class BrandService(BaseService):
 
     async def update_brand(self, data: BrandsPatch, brand_id: int, exclude_unset: bool = False):
         try:
-            await self.db.categories.get_one(id=brand_id)
+            await self.db.brands.get_one(id=brand_id)
         except NoResultFound:
             raise HTTPException(404, "Бренд не найден")
 
@@ -28,9 +32,14 @@ class BrandService(BaseService):
 
     async def delete_brand(self, brand_id: int):
         try:
-            await self.db.categories.get_one(id=brand_id)
+            await self.db.brands.get_one(id=brand_id)
         except NoResultFound:
             raise HTTPException(404, "Бренд не найден")
 
+        products = await self.db.products.get_all(brand_id=brand_id)
+        for product in products:
+            await self.db.reviews.delete(product_id=product.id)
+
+        await self.db.products.delete(brand_id=brand_id)
         await self.db.brands.delete(id=brand_id)
         await self.db.commit()

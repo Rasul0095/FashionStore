@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query, Response
 
-from src.api.dependencies import DBDep, UserIdDep
+from src.api.dependencies import DBDep, UserIdDep, require_permission
+from src.core.permissions import Permission
 from src.services.auth import AuthService
-from src.schemas.users import UserAddRequest, UserLogin, RefreshRequest
+from src.schemas.users import UserAddRequest, UserLogin, RefreshRequest, UserUpdate
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация и Авторизация"])
 
@@ -52,4 +53,24 @@ def logout(response: Response):
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
     return {"status": "OK"}
+
+@router.patch("/{user_id}")
+async def partial_change_user(
+    user_id: int,
+    user_data: UserUpdate,
+    db: DBDep,
+    current_user_id: int = require_permission(Permission.EDIT_USERS)
+):
+    await AuthService(db).update_user(user_id, user_data, current_user_id)
+    return {"status": "OK"}
+
+@router.delete("/{user_id}")
+async def delete_user(
+    user_id: int,
+    db: DBDep,
+    current_user_id: int = require_permission(Permission.DELETE_USERS)
+):
+    await AuthService(db).delete_user(user_id, current_user_id)
+    return {"status": "OK"}
+
 

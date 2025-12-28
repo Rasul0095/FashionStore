@@ -5,8 +5,11 @@ from fastapi import HTTPException
 import jwt
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.exc import NoResultFound
+
 from src.config import settings
-from src.schemas.users import UserAddRequest, UserAdd, UserLogin
+from src.core.permissions import Permission
+from src.schemas.users import UserAddRequest, UserAdd, UserLogin, UserUpdate
 from src.services.base import BaseService
 
 
@@ -58,6 +61,50 @@ class AuthService(BaseService):
 
     async def get_user_permissions(self, user_id: int):
         return await self.db.users.get_current_user_role_for_permissions(user_id)
+
+    async def update_user(self, user_id: int, data: UserUpdate, current_user_id: int):
+        # Проверяем что пользователь существует
+        try:
+            await self.db.users.get_one(id=user_id)
+        except NoResultFound:
+            raise HTTPException(404, "Пользователь не найден")
+
+        # Проверяем права: можно редактировать себя или иметь EDIT_USERS
+        if user_id != current_user_id:
+            permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
+            if Permission.EDIT_USERS.value not in permissions:
+                raise HTTPException(403, "Недостаточно прав для редактирования других пользователей")
+
+        if data.role_id is not None:
+            permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
+            if Permission.EDIT_USERS.value not in permissions:
+                raise HTTPException(403, "Недостаточно прав для изменения роли")
+
+            try:
+                await self.db.roles.get_one(id=data.role_id)
+            except NoResultFound:
+                raise HTTPException(404, "Роль не найдена")
+
+        await self.db.users.exit(data, exclude_unset=True, id=user_id)
+        await self.db.commit()
+
+    async def delete_user(self, user_id: int, current_user_id: int):
+        if user_id == current_user_id:
+            raise HTTPException(400, "Нельзя удалить свой аккаунт")
+
+        # Проверяем права
+        permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
+        if Permission.DELETE_USERS.value not in permissions:
+            raise HTTPException(403, "Недостаточно прав для удаления пользователей")
+
+        # Проверяем что пользователь существует
+        try:
+            await self.db.users.get_one(id=user_id)
+        except NoResultFound:
+            raise HTTPException(404, "Пользователь не найден")
+
+        await self.db.users.delete(id=user_id)
+        await self.db.commit()
 
     def create_access_token(self, data: dict):
         to_encode = data.copy()

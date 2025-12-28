@@ -123,6 +123,7 @@ ROLE_PERMISSIONS = {
         Permission.MANAGE_ADDRESSES,  # свои адреса
         Permission.MANAGE_CART_ITEMS,  # свою корзину
         Permission.CREATE_REVIEWS,     # свои отзывы
+        Permission.MODERATE_REVIEWS,     # свои отзывы
         Permission.DELETE_REVIEWS,     # свои отзывы
         Permission.VIEW_ADDRESSES,
         Permission.VIEW_CART_ITEMS,
