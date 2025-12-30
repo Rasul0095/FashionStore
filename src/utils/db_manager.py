@@ -1,6 +1,8 @@
 from src.repositories.addresses import AddressesRepository
 from src.repositories.brands import BrandsRepository
+from src.repositories.carts import CartsRepository
 from src.repositories.categories import CategoriesRepository
+from src.repositories.orders import OrdersRepository
 from src.repositories.products import ProductsRepository
 from src.repositories.reviews import ReviewsRepository
 from src.repositories.roles import RolesRepository
@@ -17,6 +19,8 @@ class DBManager:
         self.addresses = AddressesRepository(self.session)
         self.brands = BrandsRepository(self.session)
         self.categories = CategoriesRepository(self.session)
+        self.carts = CartsRepository(self.session)
+        self.orders = OrdersRepository(self.session)
         self.products = ProductsRepository(self.session)
         self.reviews = ReviewsRepository(self.session)
         self.roles = RolesRepository(self.session)

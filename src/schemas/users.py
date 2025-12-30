@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 
 class UserAddRequest(BaseModel):
@@ -35,6 +37,19 @@ class User(BaseModel):
 
 class UserWithHashedPassword(User):
     hashed_password: str
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role_id: Optional[int] = Field(None, description="Только для админов")
+
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+    first_name: str
+    last_name: str
+    role_id: int
 
 class RefreshRequest(BaseModel):
     refresh_token: str
