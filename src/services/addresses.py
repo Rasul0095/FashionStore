@@ -15,7 +15,7 @@ class AddressService(BaseService):
         try:
             address = await self.db.addresses.get_one(id=address_id)
         except NoResultFound:
-            raise HTTPException(404, "Отзыв не найден")
+            raise HTTPException(404, "Адрес не найден")
 
         # Проверяем что адрес принадлежит пользователю
         if address.user_id != user_id:
