@@ -3,6 +3,7 @@ from src.repositories.brands import BrandsRepository
 from src.repositories.cart_items import CartItemsRepository
 from src.repositories.carts import CartsRepository
 from src.repositories.categories import CategoriesRepository
+from src.repositories.order_items import OrderItemsRepository
 from src.repositories.orders import OrdersRepository
 from src.repositories.products import ProductsRepository
 from src.repositories.reviews import ReviewsRepository
@@ -22,6 +23,7 @@ class DBManager:
         self.categories = CategoriesRepository(self.session)
         self.cart_items = CartItemsRepository(self.session)
         self.carts = CartsRepository(self.session)
+        self.order_items = OrderItemsRepository(self.session)
         self.orders = OrdersRepository(self.session)
         self.products = ProductsRepository(self.session)
         self.reviews = ReviewsRepository(self.session)

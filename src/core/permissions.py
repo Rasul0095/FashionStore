@@ -51,6 +51,7 @@ class Permission(str, Enum):
 
     # Order Items (обычно вместе с заказами)
     VIEW_ORDER_ITEMS = "view_order_items"
+    MANAGE_ORDER_ITEMS = "manage_order_items"
 
     # Dashboard/Admin
     VIEW_DASHBOARD = "view_dashboard"
@@ -83,6 +84,7 @@ ROLE_PERMISSIONS = {
         Permission.VIEW_CART_ITEMS,
         Permission.MANAGE_CART_ITEMS,
         Permission.VIEW_ORDER_ITEMS,
+        Permission.MANAGE_ORDER_ITEMS,
         Permission.CREATE_REVIEWS,
         Permission.DELETE_REVIEWS,
         Permission.MANAGE_PRODUCT_IMAGES,
@@ -108,6 +110,7 @@ ROLE_PERMISSIONS = {
         Permission.VIEW_CART_ITEMS,
         Permission.MANAGE_CART_ITEMS,
         Permission.VIEW_ORDER_ITEMS,
+        Permission.MANAGE_ORDER_ITEMS,
         Permission.CREATE_REVIEWS,
         Permission.DELETE_REVIEWS,
         Permission.MANAGE_PRODUCT_IMAGES,

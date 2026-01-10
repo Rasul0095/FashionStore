@@ -18,6 +18,8 @@ from src.api.brands import router as router_brand
 from src.api.categories import router as router_category
 from src.api.cart_items import router as router_cart_item
 from src.api.carts import router as router_cart
+from src.api.order_items import router as roter_order_item
+from src.api.orders import router as router_order
 from src.api.products import router as router_product
 from src.api.reviews import router as router_review
 from src.api.roles import router as router_role
@@ -38,6 +40,8 @@ app.include_router(router_brand)
 app.include_router(router_category)
 app.include_router(router_cart_item)
 app.include_router(router_cart)
+app.include_router(roter_order_item)
+app.include_router(router_order)
 app.include_router(router_product)
 app.include_router(router_review)
 app.include_router(router_role)

@@ -38,6 +38,10 @@ class ProductsAdd(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+class ProductUpdate(BaseModel):
+    stock_quantity: int
+    updated_at: datetime
+
 class Product(ProductsAdd):
     id: int
 
