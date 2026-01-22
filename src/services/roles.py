@@ -43,7 +43,7 @@ class RoleService(BaseService):
             update_dict["permissions"] = current_permissions
 
         if not update_dict:
-            return  # ничего не обновляем
+            return
         update_data = RolePatch(**update_dict)
 
         await self.db.roles.exit(update_data, exclude_unset=exclude_unset, name=role_name)

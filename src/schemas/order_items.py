@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
 
 class OrderItemsAddRequest(BaseModel):
     product_id: int
@@ -12,3 +13,6 @@ class OrderItemsAdd(BaseModel):
 
 class OrderItem(OrderItemsAdd):
     id: int
+
+class OrderItemUpdate(BaseModel):
+    quantity: int = Field(..., gt=0, le=101)

@@ -30,6 +30,8 @@ class BaseRepository:
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
         model = result.scalars().one_or_none()
+        if model is None:
+            return None
         return self.schemas.model_validate(model, from_attributes=True)
 
     async def get_one(self, **filter_by) -> BaseModel:

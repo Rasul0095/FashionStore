@@ -13,7 +13,6 @@ class Permission(str, Enum):
     # Orders
     VIEW_ORDERS = "view_orders"
     MANAGE_ORDERS = "manage_orders"
-    CANCEL_ORDERS = "cancel_orders"
 
     # Users
     VIEW_USERS = "view_users"

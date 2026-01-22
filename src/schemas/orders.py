@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 from datetime import datetime
 
@@ -38,3 +38,14 @@ class OrderStatusUpdate(BaseModel):
     status: str
     updated_at: datetime
 
+class OrdersPut(BaseModel):
+    status: OrderStatus
+    total_amount: float
+    shipping_method: str
+    payment_method: str
+
+class OrdersPatch(BaseModel):
+    status: OrderStatus | None = Field(None)
+    total_amount: float | None = Field(None)
+    shipping_method: str | None = Field(None)
+    payment_method: str | None = Field(None)

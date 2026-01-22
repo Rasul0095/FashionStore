@@ -3,12 +3,44 @@ import uuid
 from pathlib import Path
 import aiofiles
 from fastapi import UploadFile
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from src.models import CartOrm
 from src.models.cart_items import CartItemOrm
 from src.models.products import ProductOrm
 
+
+def get_update_stock_for_cart_query(user_id: int):
+    """Обновления остатков товаров в корзине"""
+    cart_subquery = (
+        select(CartOrm.id)
+        .where(CartOrm.user_id == user_id)
+        .scalar_subquery()
+    )
+
+    cart_items_cte = (
+        select(
+            CartItemOrm.product_id,
+            CartItemOrm.quantity,
+        )
+        .join(ProductOrm, ProductOrm.id == CartItemOrm.product_id)
+        .where(
+            CartItemOrm.cart_id == cart_subquery,
+            ProductOrm.stock_quantity >= CartItemOrm.quantity
+        )
+        .cte("cart_items_cte")
+    )
+
+    update_stmt = (
+        update(ProductOrm)
+        .values(
+            stock_quantity=ProductOrm.stock_quantity - cart_items_cte.c.quantity
+        )
+        .where(ProductOrm.id == cart_items_cte.c.product_id)
+        .returning(ProductOrm.id)
+    )
+
+    return update_stmt
 
 def check_product_availability_and_calculate_simple(user_id: int):
     cart_query = (
