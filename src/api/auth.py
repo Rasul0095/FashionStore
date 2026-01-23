@@ -2,6 +2,9 @@ from fastapi import APIRouter, Query, Response
 
 from src.api.dependencies import DBDep, UserIdDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions import UserAlreadyExistsException, UserEmailAlreadyExistsHTTPException, EmailNotRegisteredException, \
+    EmailNotRegisteredHTTPException, IncorrectPasswordException, IncorrectPasswordHTTPException, \
+    UserNotFoundHTTPException, UserNotFoundException, RoleNotExistsException, RoleNotExistsHTTPException
 from src.services.auth import AuthService
 from src.schemas.users import UserAddRequest, UserLogin, RefreshRequest, UserUpdate
 
@@ -13,7 +16,12 @@ async def register_user(
     user_data: UserAddRequest,
     role_name: str = Query(default="user", description="Role name (user, manager, admin)")
     ):
-    await AuthService(db).register_user(user_data, role_name)
+    try:
+        await AuthService(db).register_user(user_data, role_name)
+    except RoleNotExistsException:
+        raise RoleNotExistsHTTPException
+    except UserAlreadyExistsException:
+        raise UserEmailAlreadyExistsHTTPException
     return {"status": "OK"}
 
 
@@ -23,7 +31,12 @@ async def login_user(
     db: DBDep,
     user_data: UserLogin
 ):
-    tokens = await AuthService(db).login_user(user_data)
+    try:
+        tokens = await AuthService(db).login_user(user_data)
+    except EmailNotRegisteredException:
+        raise EmailNotRegisteredHTTPException
+    except IncorrectPasswordException:
+        raise IncorrectPasswordHTTPException
     response.set_cookie("access_token", tokens["access_token"])
     response.set_cookie("refresh_token", tokens["refresh_token"])
     return {"access_token": tokens["access_token"]}
@@ -61,7 +74,12 @@ async def partial_change_user(
     db: DBDep,
     current_user_id: int = require_permission(Permission.EDIT_USERS)
 ):
-    await AuthService(db).update_user(user_id, user_data, current_user_id)
+    try:
+        await AuthService(db).update_user(user_id, user_data, current_user_id)
+    except UserNotFoundException:
+        raise UserNotFoundHTTPException
+    except RoleNotExistsException:
+        raise RoleNotExistsHTTPException
     return {"status": "OK"}
 
 @router.delete("/{user_id}")
@@ -70,7 +88,10 @@ async def delete_user(
     db: DBDep,
     current_user_id: int = require_permission(Permission.DELETE_USERS)
 ):
-    await AuthService(db).delete_user(user_id, current_user_id)
+    try:
+        await AuthService(db).delete_user(user_id, current_user_id)
+    except UserNotFoundException:
+        raise UserNotFoundHTTPException
     return {"status": "OK"}
 
 

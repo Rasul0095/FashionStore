@@ -1,4 +1,5 @@
 from src.core.permissions import ROLE_PERMISSIONS
+from src.exceptions import RoleNotExistsException, ObjectNotFoundException
 from src.services.base import BaseService
 from src.schemas.roles import RoleAdd, RoleUpdate, RolePatch
 
@@ -8,7 +9,10 @@ class RoleService(BaseService):
         return await self.db.roles.get_all()
 
     async def get_role(self, role_name: str):
-        return await self.db.roles.get_one(name=role_name)
+        try:
+            return await self.db.roles.get_one(name=role_name)
+        except ObjectNotFoundException:
+            raise RoleNotExistsException
 
     async def add_role(self, data: RoleAdd):
         role_name = data.name.value
@@ -27,13 +31,13 @@ class RoleService(BaseService):
         return role
 
     async def exit_role(self, role_name: str, data: RoleUpdate):
+        await self.get_role_with_check(role_name)
         await self.db.roles.exit(data, exclude_unset=True, name=role_name)
         await self.db.commit()
 
     async def partial_change_role(self, role_name: str, data: RolePatch, exclude_unset: bool = False):
-        role = await self.db.roles.get_one(name=role_name)
+        role = await self.get_role_with_check(role_name)
         update_dict = {}
-
         if data.description is not None:
             update_dict["description"] = data.description
 
@@ -50,4 +54,14 @@ class RoleService(BaseService):
         await self.db.commit()
 
     async def delete_role(self, role_name: str):
-        await self.db.roles.delete_role_with_current_name(role_name)
+        try:
+            await self.db.roles.delete_role_with_current_name(role_name)
+        except ObjectNotFoundException:
+            raise RoleNotExistsException
+
+    async def get_role_with_check(self, role_name: str):
+        try:
+            return await self.db.roles.get_one(name=role_name)
+        except ObjectNotFoundException:
+            raise RoleNotExistsException
+

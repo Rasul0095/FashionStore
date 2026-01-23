@@ -1,14 +1,15 @@
-from os import access
-
 from passlib.context import CryptContext
-from fastapi import HTTPException
 import jwt
+from jwt.exceptions import ExpiredSignatureError, DecodeError
 from datetime import datetime, timedelta, timezone
-
-from sqlalchemy.exc import NoResultFound
 
 from src.config import settings
 from src.core.permissions import Permission
+from src.exceptions import ObjectAlreadyExistsException, UserAlreadyExistsException, \
+    RoleNotExistsException, EmailNotRegisteredException, IncorrectPasswordException, UserRoleNotAssignedException, \
+    UserRoleNotAssignedHTTPException, TokenExpiredHTTPException, IncorrectTokenHTTPException, \
+    WrongTokenTypeHTTPException, ObjectNotFoundException, UserNotFoundException, \
+    PermissionDeniedHTTPException, CannotDeleteSelfHTTPException
 from src.schemas.users import UserAddRequest, UserAdd, UserLogin, UserUpdate
 from src.services.base import BaseService
 
@@ -26,12 +27,9 @@ class AuthService(BaseService):
             "last_name": user.last_name}
 
     async def register_user(self, data: UserAddRequest, role_name: str = "user"):
-        if await self.db.users.get_by_email(data.email):
-            raise ValueError("Такой email уже существует")
-
         role = await self.db.roles.get_by_name(role_name)
         if not role:
-            raise ValueError(f"Роль '{role_name}' не существует")
+            raise RoleNotExistsException
         hashed_password = AuthService().hashed_password(data.password)
         user_data = UserAdd(
             role_id=role.id,
@@ -40,11 +38,18 @@ class AuthService(BaseService):
             email=data.email,
             hashed_password=hashed_password,
             created_at=datetime.utcnow())
-        await self.db.users.add(user_data)
-        await self.db.commit()
+        try:
+            await self.db.users.add(user_data)
+            await self.db.commit()
+        except ObjectAlreadyExistsException as ex:
+            raise UserAlreadyExistsException from ex
 
     async def login_user(self, data: UserLogin):
         user = await self.db.users.get_with_hashed_password(email=data.email)
+        if not user:
+            raise EmailNotRegisteredException
+        if not self.verify_password(data.password, user.hashed_password):
+            raise IncorrectPasswordException
         tokens = self.create_tokens_pair({
             "user_id": user.id,
             "role_id": user.role_id,
@@ -60,49 +65,46 @@ class AuthService(BaseService):
             "email": user.email, })
 
     async def get_user_permissions(self, user_id: int):
-        return await self.db.users.get_current_user_role_for_permissions(user_id)
+        try:
+            return await self.db.users.get_current_user_role_for_permissions(user_id)
+        except UserRoleNotAssignedException:
+            raise UserRoleNotAssignedHTTPException
 
     async def update_user(self, user_id: int, data: UserUpdate, current_user_id: int):
         # Проверяем что пользователь существует
         try:
             await self.db.users.get_one(id=user_id)
-        except NoResultFound:
-            raise HTTPException(404, "Пользователь не найден")
-
-        # Проверяем права: можно редактировать себя или иметь EDIT_USERS
+        except ObjectNotFoundException:
+            raise UserNotFoundException(user_id)  # Проверяем права: можно редактировать себя или иметь EDIT_USERS
         if user_id != current_user_id:
             permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
             if Permission.EDIT_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав для редактирования других пользователей")
+                raise PermissionDeniedHTTPException(Permission.EDIT_USERS.value)
 
         if data.role_id is not None:
             permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
             if Permission.EDIT_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав для изменения роли")
+                raise PermissionDeniedHTTPException(Permission.EDIT_USERS.value)
 
-            try:
-                await self.db.roles.get_one(id=data.role_id)
-            except NoResultFound:
-                raise HTTPException(404, "Роль не найдена")
-
+        try:
+            await self.db.roles.get_one(id=data.role_id)
+        except ObjectNotFoundException:
+            raise RoleNotExistsException
         await self.db.users.exit(data, exclude_unset=True, id=user_id)
         await self.db.commit()
 
     async def delete_user(self, user_id: int, current_user_id: int):
         if user_id == current_user_id:
-            raise HTTPException(400, "Нельзя удалить свой аккаунт")
-
+            raise CannotDeleteSelfHTTPException
         # Проверяем права
         permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
         if Permission.DELETE_USERS.value not in permissions:
-            raise HTTPException(403, "Недостаточно прав для удаления пользователей")
+            raise PermissionDeniedHTTPException(Permission.DELETE_USERS.value)
 
-        # Проверяем что пользователь существует
         try:
             await self.db.users.get_one(id=user_id)
-        except NoResultFound:
-            raise HTTPException(404, "Пользователь не найден")
-
+        except ObjectNotFoundException:
+            raise UserNotFoundException
         await self.db.users.delete(id=user_id)
         await self.db.commit()
 
@@ -130,7 +132,7 @@ class AuthService(BaseService):
         """Проверяет тип токена"""
         payload = self.decode_token(token)
         if payload.get("type") != token_type:
-            raise HTTPException(status_code=401, detail=f"Недопустимый тип токена")
+            raise WrongTokenTypeHTTPException
         return payload
 
     def verify_password(self, plain_password, hashed_password):
@@ -144,5 +146,7 @@ class AuthService(BaseService):
             return jwt.decode(
                 token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
-        except jwt.exceptions.DecodeError:
-            raise HTTPException(status_code=401, detail="Неверный токен")
+        except ExpiredSignatureError:
+            raise TokenExpiredHTTPException
+        except DecodeError:
+            raise IncorrectTokenHTTPException

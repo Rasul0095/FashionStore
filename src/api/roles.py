@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body
 
 from src.api.dependencies import DBDep
+from src.exceptions import RoleNotExistsException, RoleNotExistsHTTPException
 from src.schemas.roles import RoleAdd, RolePatch, RoleUpdate
 from src.services.roles import RoleService
 
@@ -14,7 +15,10 @@ async def get_roles(db:DBDep):
 
 @router.get("/{role_name}")
 async def get_role(db:DBDep, role_name: str):
-    return await RoleService(db).get_role(role_name)
+    try:
+        return await RoleService(db).get_role(role_name)
+    except RoleNotExistsException:
+        raise RoleNotExistsHTTPException
 
 
 @router.post("")
@@ -51,7 +55,10 @@ async def exit_role(
     role_name: str,
     role_data: RoleUpdate,
 ):
-    await RoleService(db).exit_role(role_name, role_data)
+    try:
+        await RoleService(db).exit_role(role_name, role_data)
+    except RoleNotExistsException:
+        raise RoleNotExistsHTTPException
     return {"status": "OK"}
 
 
@@ -61,7 +68,10 @@ async def partial_change_role(
     role_name: str,
     role_data: RolePatch,
 ):
-    await RoleService(db).partial_change_role( role_name, role_data,  exclude_unset=True)
+    try:
+        await RoleService(db).partial_change_role( role_name, role_data,  exclude_unset=True)
+    except RoleNotExistsException:
+        raise RoleNotExistsHTTPException
     return {"status": "OK"}
 
 
@@ -70,5 +80,8 @@ async def delete_role(
         db: DBDep,
         role_name: str,
 ):
-    await RoleService(db).delete_role(role_name)
+    try:
+        await RoleService(db).delete_role(role_name)
+    except RoleNotExistsException:
+        raise RoleNotExistsHTTPException
     return {"status": "OK"}
