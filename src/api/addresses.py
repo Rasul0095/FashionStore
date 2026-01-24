@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body, Query
 
 from src.api.dependencies import DBDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions.exception import AddressNotFoundException, AddressNotFoundHTTPException
 from src.schemas.addresses import AddressesAddRequest, AddressesUpdate, AddressesPatch
 from src.services.addresses import AddressService
 
@@ -21,7 +22,10 @@ async def get_address(
     db: DBDep,
     address_id: int,
     user_id: int = require_permission(Permission.VIEW_ADDRESSES)):
-    return await AddressService(db).get_address(address_id, user_id)
+    try:
+        return await AddressService(db).get_address(address_id, user_id)
+    except AddressNotFoundException:
+        raise AddressNotFoundHTTPException
 
 
 @router.post("")
@@ -59,7 +63,10 @@ async def exit_address(
     address_data: AddressesUpdate,
     user_id: int = require_permission(Permission.MANAGE_ADDRESSES),
 ):
-    await AddressService(db).exit_address(address_id, user_id, address_data)
+    try:
+        await AddressService(db).exit_address(address_id, user_id, address_data)
+    except AddressNotFoundException:
+        raise AddressNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -71,7 +78,10 @@ async def partial_change_address(
     user_id: int = require_permission(Permission.MANAGE_ADDRESSES),
 
 ):
-    await AddressService(db).partial_change_address(address_id, user_id, address_data, exclude_unset=True)
+    try:
+        await AddressService(db).partial_change_address(address_id, user_id, address_data, exclude_unset=True)
+    except AddressNotFoundException:
+        raise AddressNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -81,5 +91,8 @@ async def delete_address(
     db: DBDep,
     user_id: int = require_permission(Permission.DELETE_ADDRESSES),
 ):
-    await AddressService(db).delete_address(address_id, user_id)
+    try:
+        await AddressService(db).delete_address(address_id, user_id)
+    except AddressNotFoundException:
+        raise AddressNotFoundHTTPException
     return {"status": "OK"}

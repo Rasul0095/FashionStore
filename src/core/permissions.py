@@ -73,6 +73,7 @@ ROLE_PERMISSIONS = {
         Permission.VIEW_BRANDS,
         Permission.DELETE_CATEGORIES,
         Permission.DELETE_BRANDS,
+        Permission.DELETE_ADDRESSES,
         Permission.MANAGE_CATEGORIES,
         Permission.MANAGE_BRANDS,
         Permission.VIEW_ANALYTICS,
@@ -112,6 +113,7 @@ ROLE_PERMISSIONS = {
         Permission.MANAGE_ORDER_ITEMS,
         Permission.CREATE_REVIEWS,
         Permission.DELETE_REVIEWS,
+        Permission.DELETE_ADDRESSES,
         Permission.MANAGE_PRODUCT_IMAGES,
         Permission.VIEW_DASHBOARD,
     ],
@@ -126,7 +128,8 @@ ROLE_PERMISSIONS = {
         Permission.MANAGE_CART_ITEMS,  # свою корзину
         Permission.CREATE_REVIEWS,     # свои отзывы
         Permission.MODERATE_REVIEWS,     # свои отзывы
-        Permission.DELETE_REVIEWS,     # свои отзывы
+        Permission.DELETE_REVIEWS,# свои отзывы
+        Permission.DELETE_ADDRESSES,
         Permission.VIEW_ADDRESSES,
         Permission.VIEW_CART_ITEMS,
     ]

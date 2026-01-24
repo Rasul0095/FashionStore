@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body
 
 from src.api.dependencies import DBDep
-from src.exceptions import RoleNotExistsException, RoleNotExistsHTTPException
+from src.exceptions.exception import RoleNotExistsException, RoleNotExistsHTTPException
 from src.schemas.roles import RoleAdd, RolePatch, RoleUpdate
 from src.services.roles import RoleService
 

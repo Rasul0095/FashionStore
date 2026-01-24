@@ -3,7 +3,7 @@ from fastapi import Depends, Request, Query
 from pydantic import BaseModel
 
 from src.core.permissions import Permission
-from src.exceptions import NoAccessTokenHTTPException, IncorrectTokenException, IncorrectTokenHTTPException, \
+from src.exceptions.exception import NoAccessTokenHTTPException, IncorrectTokenException, IncorrectTokenHTTPException, \
     PermissionDeniedHTTPException
 from src.utils.db_manager import DBManager
 from src.database import async_session_maker

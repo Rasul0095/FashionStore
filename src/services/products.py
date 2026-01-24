@@ -2,6 +2,7 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import NoResultFound
 from datetime import datetime
 
+from src.exceptions.exception import ObjectNotFoundException, ProductNotFoundException
 from src.schemas.products import ProductsAddRequest, ProductsAdd, ProductImagesUpdate, ProductsPatch
 from src.services.base import BaseService
 from src.api.dependencies import PaginationDep
@@ -104,8 +105,8 @@ class ProductService(BaseService):
         except NoResultFound:
             raise HTTPException(404, "Товар не найден")
 
-        # await self.db.cart_items.delete(product_id=product_id)
-        # await self.db.order_items.delete(product_id=product_id)
+        await self.db.cart_items.delete(product_id=product_id)
+        await self.db.order_items.delete(product_id=product_id)
         await self.db.reviews.delete(product_id=product_id)
 
         if product.images:
@@ -115,3 +116,9 @@ class ProductService(BaseService):
                     os.remove(image_path)
         await self.db.products.delete(id=product_id)
         await self.db.commit()
+
+    async def get_product_with_check(self, product_id: int):
+        try:
+            return await self.db.products.get_one(id=product_id)
+        except ObjectNotFoundException:
+            raise ProductNotFoundException

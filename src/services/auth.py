@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from src.config import settings
 from src.core.permissions import Permission
-from src.exceptions import ObjectAlreadyExistsException, UserAlreadyExistsException, \
+from src.exceptions.exception import ObjectAlreadyExistsException, UserAlreadyExistsException, \
     RoleNotExistsException, EmailNotRegisteredException, IncorrectPasswordException, UserRoleNotAssignedException, \
     UserRoleNotAssignedHTTPException, TokenExpiredHTTPException, IncorrectTokenHTTPException, \
     WrongTokenTypeHTTPException, ObjectNotFoundException, UserNotFoundException, \

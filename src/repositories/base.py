@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import  AsyncSession
 from sqlalchemy import select, insert, update, delete
 
 from src.database import Base
-from src.exceptions import ObjectNotFoundException, ObjectAlreadyExistsException
+from src.exceptions.exception import ObjectNotFoundException, ObjectAlreadyExistsException
 
 
 class BaseRepository:

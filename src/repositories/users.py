@@ -2,7 +2,7 @@ from sqlalchemy import select
 from pydantic import EmailStr
 from sqlalchemy.exc import NoResultFound
 
-from src.exceptions import EmailNotRegisteredException, UserRoleNotAssignedException
+from src.exceptions.exception import EmailNotRegisteredException, UserRoleNotAssignedException
 from src.models import UserOrm, RoleOrm
 from src.repositories.base import BaseRepository
 from src.schemas.users import User, UserWithHashedPassword

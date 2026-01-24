@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Body, UploadFile, File, Query
 
-from src.api.dependencies import DBDep, UserIdDep, require_permission
+from src.api.dependencies import DBDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions.exception import ReviewNotFoundException, ReviewNotFoundHTTPException, ProductNotFoundException, \
+    ProductNotFoundHTTPException
 from src.schemas.reviews import ReviewsAddRequest, ReviewsPatch
 from src.services.reviews import ReviewService
 
@@ -22,7 +24,10 @@ async def get_review(
     db:DBDep,
     review_id: int,
     user_id: int = require_permission(Permission.VIEW_REVIEWS)):
-    return await ReviewService(db).get_review(review_id, user_id)
+    try:
+        return await ReviewService(db).get_review(review_id, user_id)
+    except ReviewNotFoundException:
+        raise ReviewNotFoundHTTPException
 
 
 @router.post("")
@@ -57,7 +62,10 @@ async def add_review(
     user_id: int = require_permission(Permission.CREATE_REVIEWS),
 
 ):
-    review = await ReviewService(db).add_review(user_id, product_id, review_data)
+    try:
+        review = await ReviewService(db).add_review(user_id, product_id, review_data)
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
     return {"status": "OK", "data": review}
 
 
@@ -69,7 +77,10 @@ async def add_review_images(
     user_id: int = require_permission(Permission.MODERATE_REVIEWS),
 
 ):
-    await ReviewService(db).add_review_images(user_id, review_id, images)
+    try:
+        await ReviewService(db).add_review_images(user_id, review_id, images)
+    except ReviewNotFoundException:
+        raise ReviewNotFoundHTTPException
     return {
         "status": "OK",
         "message": f"Загрузка {len(images)} изображений начата",
@@ -84,7 +95,10 @@ async def exit_review(
     user_id: int = require_permission(Permission.MODERATE_REVIEWS),
 
 ):
-    await ReviewService(db).update_review(user_id, review_id, review_data)
+    try:
+        await ReviewService(db).update_review(user_id, review_id, review_data)
+    except ReviewNotFoundException:
+        raise ReviewNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -96,7 +110,10 @@ async def partial_change_review(
     user_id: int = require_permission(Permission.MODERATE_REVIEWS),
 
 ):
-    await ReviewService(db).update_review(user_id, review_id, review_data, exclude_unset=True)
+    try:
+        await ReviewService(db).update_review(user_id, review_id, review_data, exclude_unset=True)
+    except ReviewNotFoundException:
+        raise ReviewNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -106,5 +123,8 @@ async def delete_review(
     review_id: int,
     user_id: int = require_permission(Permission.DELETE_REVIEWS),
 ):
-    await ReviewService(db).delete_review(review_id)
+    try:
+        await ReviewService(db).delete_review(review_id, user_id)
+    except ReviewNotFoundException:
+        raise ReviewNotFoundHTTPException
     return {"status": "OK"}

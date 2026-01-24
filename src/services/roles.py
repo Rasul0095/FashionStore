@@ -1,5 +1,5 @@
 from src.core.permissions import ROLE_PERMISSIONS
-from src.exceptions import RoleNotExistsException, ObjectNotFoundException
+from src.exceptions.exception import RoleNotExistsException, ObjectNotFoundException
 from src.services.base import BaseService
 from src.schemas.roles import RoleAdd, RoleUpdate, RolePatch
 

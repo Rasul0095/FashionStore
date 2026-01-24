@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, Response
 
 from src.api.dependencies import DBDep, UserIdDep, require_permission
 from src.core.permissions import Permission
-from src.exceptions import UserAlreadyExistsException, UserEmailAlreadyExistsHTTPException, EmailNotRegisteredException, \
+from src.exceptions.exception import UserAlreadyExistsException, UserEmailAlreadyExistsHTTPException, EmailNotRegisteredException, \
     EmailNotRegisteredHTTPException, IncorrectPasswordException, IncorrectPasswordHTTPException, \
     UserNotFoundHTTPException, UserNotFoundException, RoleNotExistsException, RoleNotExistsHTTPException
 from src.services.auth import AuthService

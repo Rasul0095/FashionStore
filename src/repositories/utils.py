@@ -5,6 +5,8 @@ import aiofiles
 from fastapi import UploadFile
 from sqlalchemy import func, select, update
 
+from src.exceptions.upload import (
+    InvalidFileExtensionHTTPException, FileTooLargeHTTPException, TooManyFilesHTTPException, NoFilesUploadedHTTPException)
 from src.models import CartOrm
 from src.models.cart_items import CartItemOrm
 from src.models.products import ProductOrm
@@ -81,15 +83,31 @@ def generate_order_number(user_id: int) -> str:
 async def save_uploaded_files(
         files: list[UploadFile],
         prefix: str,
-        upload_dir: str = "src/static"
+        upload_dir: str = "src/static",
+        max_file_size: int = 10 * 1024 * 1024,
+        allowed_extensions: set = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
 ) -> list[str]:
+    if not files:
+        raise NoFilesUploadedHTTPException()
+
+    if len(files) > 10:
+        raise TooManyFilesHTTPException(10)
+
     UPLOAD_DIR = Path(upload_dir)
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     saved_paths = []
+
     for file in files:
+        ext = Path(file.filename).suffix.lower()
+        if ext not in allowed_extensions:
+            raise InvalidFileExtensionHTTPException(file.filename, allowed_extensions)
+
         data = await file.read()
-        ext = Path(file.filename).suffix or '.jpg'
+
+        if len(data) > max_file_size:
+            raise FileTooLargeHTTPException(file.filename, max_file_size // 1024 // 1024)
+
         unique_name = f"{prefix}_{uuid.uuid4()}{ext}"
         file_path = UPLOAD_DIR / unique_name
 

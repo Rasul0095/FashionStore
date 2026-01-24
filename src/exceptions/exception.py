@@ -20,6 +20,15 @@ class UserAlreadyExistsException(FashionStoreException):
 class RoleNotExistsException(FashionStoreException):
     detail = "Роль не существует"
 
+class ReviewNotFoundException(FashionStoreException):
+    detail = "Отзыв не найден"
+
+class ProductNotFoundException(FashionStoreException):
+    detail = "Товар не найден"
+
+class AddressNotFoundException(FashionStoreException):
+    detail = "Адрес не найден"
+
 class UserRoleNotAssignedException(FashionStoreException):
     detail = "У данного пользователя не назначена роль"
 
@@ -38,10 +47,11 @@ class IncorrectTokenException(FashionStoreException):
 
 class FashionStoreHTTPException(HTTPException):
     status_code = 500
-    detail = None
+    detail = "Ошибка: {text}"
 
-    def __init__(self):
-        super().__init__(status_code=self.status_code, detail=self.detail)
+    def __init__(self, text: str = None, **kwargs):
+        detail = self.detail.format(text=text, **kwargs)
+        super().__init__(status_code=self.status_code, detail=detail)
 
 
 class PermissionDeniedHTTPException(HTTPException):
@@ -109,3 +119,23 @@ class IncorrectPasswordHTTPException(FashionStoreHTTPException):
 class UnableDeleteRoleHTTPException(FashionStoreHTTPException):
     status_code = 400
     detail = "Невозможно удалить роль: Данную роль имеют немалое количество пользователей"
+
+class ReviewNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Отзыв не найден"
+
+class ProductNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Товар не найден"
+
+class AddressNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Адрес не найден"
+
+class AddressInUseHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Адрес используется в заказах: {text}. Сначала удалите или измените эти заказы."
+
+    def __init__(self, order_ids: list[int]):
+        super().__init__(text=str(order_ids))
+
