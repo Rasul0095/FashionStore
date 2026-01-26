@@ -2,6 +2,7 @@ from fastapi import  APIRouter, Body
 
 from src.api.dependencies import DBDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions.exception import BrandNotFoundException, BrandNotFoundHTTPException
 from src.schemas.brands import BrandsAdd, BrandsPatch
 from src.services.brands import BrandService
 
@@ -17,7 +18,10 @@ async def get_brand(
     db:DBDep,
     brand_id: int,
     user_id: int = require_permission(Permission.VIEW_BRANDS)):
-    return await BrandService(db).get_brand(brand_id)
+    try:
+        return await BrandService(db).get_brand(brand_id)
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
 
 
 @router.post("")
@@ -60,7 +64,10 @@ async def exit_brand(
     brand_data: BrandsPatch,
     user_id: int = require_permission(Permission.MANAGE_BRANDS)
 ):
-    await BrandService(db).update_brand(brand_data, brand_id)
+    try:
+        await BrandService(db).update_brand(brand_data, brand_id)
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -71,7 +78,10 @@ async def partial_change_brand(
     brand_data: BrandsPatch,
     user_id: int = require_permission(Permission.MANAGE_BRANDS)
 ):
-    await BrandService(db).update_brand(brand_data, brand_id, exclude_unset=True)
+    try:
+        await BrandService(db).update_brand(brand_data, brand_id, exclude_unset=True)
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -81,5 +91,8 @@ async def delete_brand(
     brand_id: int,
     user_id: int = require_permission(Permission.DELETE_BRANDS)
 ):
-    await BrandService(db).delete_brand(brand_id)
+    try:
+        await BrandService(db).delete_brand(brand_id)
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
     return {"status": "OK"}

@@ -81,6 +81,7 @@ ROLE_PERMISSIONS = {
         Permission.MODERATE_REVIEWS,
         Permission.VIEW_ADDRESSES,
         Permission.MANAGE_ADDRESSES,
+        Permission.MANAGE_CART,
         Permission.VIEW_CART_ITEMS,
         Permission.MANAGE_CART_ITEMS,
         Permission.VIEW_ORDER_ITEMS,
@@ -95,6 +96,7 @@ ROLE_PERMISSIONS = {
         Permission.VIEW_PRODUCTS,
         Permission.CREATE_PRODUCTS,
         Permission.EDIT_PRODUCTS,
+        Permission.MANAGE_PRODUCT_IMAGES,
         Permission.VIEW_ORDERS,
         Permission.MANAGE_ORDERS,
         Permission.VIEW_USERS,
@@ -107,6 +109,7 @@ ROLE_PERMISSIONS = {
         Permission.MODERATE_REVIEWS,
         Permission.VIEW_ADDRESSES,
         Permission.MANAGE_ADDRESSES,
+        Permission.MANAGE_CART,
         Permission.VIEW_CART_ITEMS,
         Permission.MANAGE_CART_ITEMS,
         Permission.VIEW_ORDER_ITEMS,
@@ -132,5 +135,6 @@ ROLE_PERMISSIONS = {
         Permission.DELETE_ADDRESSES,
         Permission.VIEW_ADDRESSES,
         Permission.VIEW_CART_ITEMS,
+        Permission.VIEW_ANALYTICS,
     ]
 }

@@ -3,6 +3,7 @@ from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions.exception import CategoryNotFoundException, CategoryNotFoundHTTPException
 from src.schemas.categories import CategoriesAdd, CategoriesPatch
 from src.services.categories import CategoryService
 
@@ -21,7 +22,10 @@ async def get_category(
     category_id: int,
     user_id: int = require_permission(Permission.VIEW_CATEGORIES)
 ):
-    return await CategoryService(db).get_category(category_id)
+    try:
+        return await CategoryService(db).get_category(category_id)
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
 
 
 @router.post("")
@@ -138,7 +142,10 @@ async def exit_category(
     category_data: CategoriesPatch,
     user_id: int = require_permission(Permission.MANAGE_CATEGORIES)
 ):
-    await CategoryService(db).update_category(category_data, category_id)
+    try:
+        await CategoryService(db).update_category(category_data, category_id)
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -149,7 +156,10 @@ async def partial_change_category(
     category_data: CategoriesPatch,
     user_id: int = require_permission(Permission.MANAGE_CATEGORIES)
 ):
-    await CategoryService(db).update_category(category_data, category_id, exclude_unset=True)
+    try:
+        await CategoryService(db).update_category(category_data, category_id, exclude_unset=True)
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -159,5 +169,8 @@ async def delete_category(
     category_id: int,
     user_id: int = require_permission(Permission.DELETE_CATEGORIES)
 ):
-    await CategoryService(db).delete_category(category_id)
+    try:
+        await CategoryService(db).delete_category(category_id)
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
     return {"status": "OK"}

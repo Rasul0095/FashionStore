@@ -1,17 +1,15 @@
-from fastapi import HTTPException
 from datetime import datetime
 
 from src.api.dependencies import UserIdDep
-from src.schemas.carts import CartsAdd, Cart
+from src.exceptions.exception import CartNotExistsException
+from src.schemas.carts import CartsAdd
 from src.services.base import BaseService
 
 class CartService(BaseService):
-
     async def get_my_cart(self, user_id: int):
         existing = await self.db.carts.get_filtered(user_id=user_id)
         if not existing:
-            raise HTTPException(400, "Корзины не существует")
-
+            raise CartNotExistsException
         return await self.db.carts.get_filtered(user_id=user_id)
 
     async def add_cart(self, user_id: UserIdDep):
@@ -25,5 +23,8 @@ class CartService(BaseService):
         return cart
 
     async def delete_my_cart(self, user_id: int):
+        existing = await self.db.carts.get_filtered(user_id=user_id)
+        if not existing:
+            raise CartNotExistsException
         await self.db.carts.delete(user_id=user_id)
         await self.db.commit()

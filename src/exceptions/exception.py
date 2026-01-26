@@ -20,6 +20,12 @@ class UserAlreadyExistsException(FashionStoreException):
 class RoleNotExistsException(FashionStoreException):
     detail = "Роль не существует"
 
+class CartNotExistsException(FashionStoreException):
+    detail = "Корзины не существует"
+
+class CartItemNotFoundException(FashionStoreException):
+    detail = "Элемент корзины не найден"
+
 class ReviewNotFoundException(FashionStoreException):
     detail = "Отзыв не найден"
 
@@ -28,6 +34,12 @@ class ProductNotFoundException(FashionStoreException):
 
 class AddressNotFoundException(FashionStoreException):
     detail = "Адрес не найден"
+
+class BrandNotFoundException(FashionStoreException):
+    detail = "Бранд не найден"
+
+class CategoryNotFoundException(FashionStoreException):
+    detail = "Категория не найдена"
 
 class UserRoleNotAssignedException(FashionStoreException):
     detail = "У данного пользователя не назначена роль"
@@ -127,6 +139,22 @@ class ReviewNotFoundHTTPException(FashionStoreHTTPException):
 class ProductNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Товар не найден"
+
+class BrandNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Бранд не найден"
+
+class CategoryNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Категория не найдена"
+
+class CartNotExistsHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Корзины не существует"
+
+class CartItemNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Элемент корзины не найден"
 
 class AddressNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404

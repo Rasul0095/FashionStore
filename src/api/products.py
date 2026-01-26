@@ -2,6 +2,8 @@ from fastapi import APIRouter, Query, Body, UploadFile, File
 
 from src.api.dependencies import DBDep, PaginationDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions.exception import ProductNotFoundException, ProductNotFoundHTTPException, CategoryNotFoundException, \
+    CategoryNotFoundHTTPException, BrandNotFoundException, BrandNotFoundHTTPException
 from src.schemas.products import ProductsAddRequest, ProductsPatch
 from src.services.products import ProductService
 
@@ -23,7 +25,10 @@ async def get_product(
     db:DBDep,
     product_id: int,
     user_id: int = require_permission(Permission.VIEW_PRODUCTS),):
-    return await ProductService(db).get_product(product_id)
+    try:
+        return await ProductService(db).get_product(product_id)
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
 
 
 @router.post("")
@@ -162,7 +167,12 @@ async def add_product(
         }
     ),
 ):
-    product = await ProductService(db).add_product(category_id, brand_id, product_data)
+    try:
+        product = await ProductService(db).add_product(category_id, brand_id, product_data)
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
     return {"status": "OK", "data": product}
 
 
@@ -172,7 +182,10 @@ async def add_product_images(
     db: DBDep,
     images: list[UploadFile] = File(..., description="Список изображений товара"),
     user_id: int = require_permission(Permission.MANAGE_PRODUCT_IMAGES),):
-    await ProductService(db).add_product_images(product_id, images)
+    try:
+        await ProductService(db).add_product_images(product_id, images)
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
     return {
         "status": "OK",
         "message": f"Загрузка {len(images)} изображений начата",
@@ -187,7 +200,14 @@ async def exit_product(
     brand_id: int,
     product_data: ProductsPatch,
     user_id: int = require_permission(Permission.EDIT_PRODUCTS),):
-    await ProductService(db).update_product(product_id, category_id, brand_id, product_data)
+    try:
+        await ProductService(db).update_product(product_id, category_id, brand_id, product_data)
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -199,13 +219,19 @@ async def partial_change_product(
     brand_id: int,
     product_data: ProductsPatch,
     user_id: int = require_permission(Permission.EDIT_PRODUCTS),):
-
-    await ProductService(db).update_product(
-        product_id,
-        category_id,
-        brand_id,
-        product_data,
-        exclude_unset=True)
+    try:
+        await ProductService(db).update_product(
+            product_id,
+            category_id,
+            brand_id,
+            product_data,
+            exclude_unset=True)
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
+    except CategoryNotFoundException:
+        raise CategoryNotFoundHTTPException
+    except BrandNotFoundException:
+        raise BrandNotFoundHTTPException
     return {"status": "OK"}
 
 
@@ -214,5 +240,8 @@ async def delete_product(
     db: DBDep,
     product_id: int,
     user_id: int = require_permission(Permission.DELETE_PRODUCTS),):
-    await ProductService(db).delete_product(product_id)
+    try:
+        await ProductService(db).delete_product(product_id)
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
     return {"status": "OK"}
