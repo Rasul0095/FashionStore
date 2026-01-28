@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from src.api.dependencies import UserIdDep
-from src.exceptions.exception import CartNotExistsException
+from src.exceptions.exception import CartNotExistsException, ObjectNotFoundException
 from src.schemas.carts import CartsAdd
 from src.services.base import BaseService
 
@@ -28,3 +28,9 @@ class CartService(BaseService):
             raise CartNotExistsException
         await self.db.carts.delete(user_id=user_id)
         await self.db.commit()
+
+    async def get_cart_user_with_check(self, user_id: int):
+        try:
+            return await self.db.carts.get_one(user_id=user_id)
+        except ObjectNotFoundException:
+            raise CartNotExistsException

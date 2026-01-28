@@ -9,7 +9,7 @@ from src.exceptions.exception import ObjectAlreadyExistsException, UserAlreadyEx
     RoleNotExistsException, EmailNotRegisteredException, IncorrectPasswordException, UserRoleNotAssignedException, \
     UserRoleNotAssignedHTTPException, TokenExpiredHTTPException, IncorrectTokenHTTPException, \
     WrongTokenTypeHTTPException, ObjectNotFoundException, UserNotFoundException, \
-    PermissionDeniedHTTPException, CannotDeleteSelfHTTPException
+    PermissionDeniedHTTPException, CannotDeleteSelfHTTPException, UserAlreadyExistsHTTPException
 from src.schemas.users import UserAddRequest, UserAdd, UserLogin, UserUpdate
 from src.services.base import BaseService
 
@@ -69,6 +69,12 @@ class AuthService(BaseService):
             return await self.db.users.get_current_user_role_for_permissions(user_id)
         except UserRoleNotAssignedException:
             raise UserRoleNotAssignedHTTPException
+
+    async def get_user_with_check(self, user_id: int):
+        try:
+            return await self.db.users.get_one(id=user_id)
+        except ObjectNotFoundException:
+            raise UserAlreadyExistsHTTPException
 
     async def update_user(self, user_id: int, data: UserUpdate, current_user_id: int):
         # Проверяем что пользователь существует

@@ -2,6 +2,9 @@ from fastapi import APIRouter, Query
 
 from src.api.dependencies import DBDep, UserIdDep, require_permission
 from src.core.permissions import Permission
+from src.exceptions.exception import OrderNotFoundException, OrderNotFoundHTTPException, CartNotExistsException, \
+    CartNotExistsHTTPException, AddressNotFoundException, AddressNotFoundHTTPException, \
+    ProductNotFoundException, ProductNotFoundHTTPException
 from src.schemas.orders import OrdersAddRequest, OrderStatusUpdateRequest, OrdersPatch, OrdersPut
 from src.services.orders import OrderService
 
@@ -23,7 +26,10 @@ async def get_order(
     order_id: int,
     user_id: int = require_permission(Permission.VIEW_ORDERS)
 ):
-    return await OrderService(db).get_order(order_id, user_id)
+    try:
+        return await OrderService(db).get_order(order_id, user_id)
+    except OrderNotFoundException:
+        raise OrderNotFoundHTTPException
 
 
 @router.post("")
@@ -33,7 +39,14 @@ async def add_order(
     user_id: UserIdDep,
     order_data: OrdersAddRequest,
 ):
-    order = await OrderService(db).add_order(user_id, address_id, order_data)
+    try:
+        order = await OrderService(db).add_order(user_id, address_id, order_data)
+    except CartNotExistsException:
+        raise CartNotExistsHTTPException
+    except AddressNotFoundException:
+        raise AddressNotFoundHTTPException
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
     return {"status": "OK", "data": order}
 
 
@@ -44,7 +57,10 @@ async def change_order_status(
     status_data: OrderStatusUpdateRequest,
     user_id: int = require_permission(Permission.MANAGE_ORDERS),
 ):
-    return await OrderService(db).change_order_status(order_id, status_data, user_id)
+    try:
+        return await OrderService(db).change_order_status(order_id, status_data, user_id)
+    except OrderNotFoundException:
+        raise OrderNotFoundHTTPException
 
 
 @router.put("/{order_id}")
@@ -54,7 +70,10 @@ async def exit_order(
     order_data: OrdersPut,
     user_id: int = require_permission(Permission.MANAGE_ORDERS),
 ):
-    order = await OrderService(db).exit_order(order_id, user_id, order_data)
+    try:
+        order = await OrderService(db).exit_order(order_id, user_id, order_data)
+    except OrderNotFoundException:
+        raise OrderNotFoundHTTPException
     return {"status": "OK", "data": order}
 
 @router.patch("/{order_id}")
@@ -64,7 +83,10 @@ async def partial_change_order(
     order_data: OrdersPatch,
     user_id: int = require_permission(Permission.MANAGE_ORDERS),
 ):
-    order = await OrderService(db).partial_change_order(order_id, user_id, order_data)
+    try:
+        order = await OrderService(db).partial_change_order(order_id, user_id, order_data)
+    except OrderNotFoundException:
+        raise OrderNotFoundHTTPException
     return {"status": "OK", "data": order}
 
 
@@ -74,5 +96,8 @@ async def delete_order(
     order_id: int,
     user_id: int = require_permission(Permission.MANAGE_ORDERS),
 ):
-    order = await OrderService(db).delete_order(order_id, user_id)
+    try:
+        order = await OrderService(db).delete_order(order_id, user_id)
+    except OrderNotFoundException:
+        raise OrderNotFoundHTTPException
     return order

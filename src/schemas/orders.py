@@ -39,13 +39,11 @@ class OrderStatusUpdate(BaseModel):
     updated_at: datetime
 
 class OrdersPut(BaseModel):
-    status: OrderStatus
     total_amount: float
     shipping_method: str
     payment_method: str
 
 class OrdersPatch(BaseModel):
-    status: OrderStatus | None = Field(None)
     total_amount: float | None = Field(None)
     shipping_method: str | None = Field(None)
     payment_method: str | None = Field(None)

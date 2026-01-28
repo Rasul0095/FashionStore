@@ -23,6 +23,9 @@ class RoleNotExistsException(FashionStoreException):
 class CartNotExistsException(FashionStoreException):
     detail = "Корзины не существует"
 
+class CartEmptyException(FashionStoreException):
+    detail = "Корзина пуста"
+
 class CartItemNotFoundException(FashionStoreException):
     detail = "Элемент корзины не найден"
 
@@ -32,6 +35,9 @@ class ReviewNotFoundException(FashionStoreException):
 class ProductNotFoundException(FashionStoreException):
     detail = "Товар не найден"
 
+class NotAllProductsAvailableException(FashionStoreException):
+    detail = "Не все товары доступны"
+
 class AddressNotFoundException(FashionStoreException):
     detail = "Адрес не найден"
 
@@ -40,6 +46,12 @@ class BrandNotFoundException(FashionStoreException):
 
 class CategoryNotFoundException(FashionStoreException):
     detail = "Категория не найдена"
+
+class OrderNotFoundException(FashionStoreException):
+    detail = "Заказ не найден"
+
+class OrderItemNotFoundException(FashionStoreException):
+    detail = "Элемент заказа не найден"
 
 class UserRoleNotAssignedException(FashionStoreException):
     detail = "У данного пользователя не назначена роль"
@@ -103,6 +115,9 @@ class WrongTokenTypeHTTPException(FashionStoreHTTPException):
     status_code = 401
     detail = "Неправильный тип токена"
 
+class UserAlreadyExistsHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Пользователь уже существует"
 
 class UserEmailAlreadyExistsHTTPException(FashionStoreHTTPException):
     status_code = 409
@@ -136,9 +151,67 @@ class ReviewNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Отзыв не найден"
 
+class ErrorUpdatingBalancesHTTPException(FashionStoreHTTPException):
+    status_code = 500
+    detail = "Ошибка обновления остатков"
+
 class ProductNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Товар не найден"
+
+class CancelledOrderHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Отмененный заказ можно только вернуть"
+
+class DeliveredOrderHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Доставленный заказ можно только вернуть"
+
+class NotEnoughProductHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Недостаточно товара {product}. Доступно: {quantity}"
+
+    def __init__(self, product: str, quantity: int):
+        super().__init__(product=product, quantity=quantity)
+
+
+class ProductOutOfStockHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Товар {text} закончился"
+
+    def __init__(self, product: str):
+        super().__init__(text=product)
+
+class InvalidStatusHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Недопустимый статус: Допустимо {text}"
+
+    def __init__(self, status: str):
+        super().__init__(text=status)
+
+class OrderCannotModifiedHTTPException(FashionStoreHTTPException):
+    detail = "Заказ в статусе {text} нельзя изменять"
+
+    def __init__(self, status: str):
+        super().__init__(text=status)
+
+
+class OrderCannotDeletedHTTPException(FashionStoreHTTPException):
+    detail = "Заказ в статусе {text} нельзя удалить"
+
+    def __init__(self, status: str):
+        super().__init__(text=status)
+
+class ProductAlreadyInOrderHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Товар {text} уже есть в заказе"
+
+    def __init__(self, product: str):
+        super().__init__(text=product)
+
+class NotAllProductsAvailableHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Не все товары доступны"
 
 class BrandNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
@@ -152,9 +225,21 @@ class CartNotExistsHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Корзины не существует"
 
+class CartEmptyHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Корзина пуста"
+
 class CartItemNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Элемент корзины не найден"
+
+class OrderNotFoundHTTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Заказ не найден"
+
+class OrderItemNotFoundHHTPException(FashionStoreHTTPException):
+    status_code = 404
+    detail = "Элемент заказа не найден"
 
 class AddressNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404

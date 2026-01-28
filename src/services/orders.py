@@ -1,15 +1,21 @@
-from fastapi import HTTPException
 from datetime import datetime
 import logging
-from sqlalchemy.exc import NoResultFound
 
 from src.core.permissions import Permission
+from src.exceptions.exception import PermissionDeniedHTTPException, ObjectNotFoundException, OrderNotFoundException, \
+    ErrorUpdatingBalancesHTTPException, InvalidStatusHTTPException, ProductOutOfStockHTTPException, \
+    OrderCannotModifiedHTTPException, OrderCannotDeletedHTTPException, CartEmptyHTTPException, \
+ CancelledOrderHTTPException, DeliveredOrderHTTPException, AddressNotFoundException
 from src.repositories.utils import generate_order_number, check_product_availability_and_calculate_simple, \
     get_update_stock_for_cart_query
 from src.schemas.order_items import OrderItemsAdd
 from src.schemas.orders import OrdersAddRequest, OrdersAdd, OrderStatusUpdateRequest, OrderStatusUpdate, OrdersPatch, \
     OrdersPut
+from src.services.addresses import AddressService
+from src.services.auth import AuthService
 from src.services.base import BaseService
+from src.services.carts import CartService
+from src.services.products import ProductService
 from src.tasks.tasks import send_order_status_notification_task
 
 
@@ -17,54 +23,42 @@ class OrderService(BaseService):
     async def get_my_orders(self, user_id: int, target_user_id: int = None):
         target = target_user_id if target_user_id else user_id
         if target != user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(user_id)
+            permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав")
-
+                raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
         return await self.db.orders.get_filtered(user_id=target)
 
     async def get_order(self, order_id: int, user_id: int):
-        try:
-            order = await self.db.orders.get_one(id=order_id)
-        except NoResultFound:
-            raise HTTPException(404, "Заказ не найден")
+        order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(user_id)
+            permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав")
+                raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
         return order
 
     async def add_order(self, user_id: int, address_id: int, data: OrdersAddRequest):
-        try:
-            cart = await self.db.carts.get_one(user_id=user_id)
-        except NoResultFound:
-            raise HTTPException(404, "Корзина не найдена")
-
-        # 1. Проверка наличия
+        cart = await CartService(self.db).get_cart_user_with_check(user_id)
+        # 1. Проверка наличия товаров
         query = check_product_availability_and_calculate_simple(user_id)
         result = await self.db.session.execute(query)
         summary = result.first()
 
         if not summary or summary.total_items == 0:
-            raise HTTPException(400, "Корзина пуста")
-        if summary.available_items < summary.total_items:
-            raise HTTPException(400, "Не все товары доступны")
+            raise CartEmptyHTTPException
 
         # 2. Проверка адреса
-        try:
-            await self.db.addresses.get_one(id=address_id, user_id=user_id)
-        except NoResultFound:
-            raise HTTPException(404, "Адрес не найден")
-
+        address = await AddressService(self.db).get_address_with_check(address_id)
+        if cart.user_id != address.user_id:
+            raise AddressNotFoundException
         # 3. Получить товары корзины
         cart_items = await self.db.cart_items.get_filtered(cart_id=cart.id)
 
         # 3.1. Двойная проверка наличия перед обновлением
         for item in cart_items:
-            product = await self.db.products.get_one(id=item.product_id)
+            product = await ProductService(self.db).get_product_with_check(item.product_id)
             if product.stock_quantity < item.quantity:
                 await self.db.rollback()
-                raise HTTPException(400, f"Товар {product.name} закончился")
+                raise ProductOutOfStockHTTPException(product.name)
 
         # 4. Создать заказ
         order_number = generate_order_number(user_id)
@@ -81,7 +75,7 @@ class OrderService(BaseService):
 
         # 5. Создать order_items
         for item in cart_items:
-            product = await self.db.products.get_one(id=item.product_id)
+            product = await ProductService(self.db).get_product_with_check(item.product_id)
             order_item = OrderItemsAdd(
                 order_id=order.id,
                 product_id=product.id,
@@ -97,7 +91,7 @@ class OrderService(BaseService):
 
         if updated != summary.available_items:
             await self.db.rollback()
-            raise HTTPException(500, "Ошибка обновления остатков")
+            raise ErrorUpdatingBalancesHTTPException
 
         # 7. Очистить корзину
         await self.db.cart_items.delete(cart_id=cart.id)
@@ -106,27 +100,27 @@ class OrderService(BaseService):
         return order
 
     async def change_order_status(self, order_id: int, status_data: OrderStatusUpdateRequest, user_id: int):
-        try:
-            order = await self.db.orders.get_one(id=order_id)
-        except NoResultFound:
-            raise HTTPException(404, "Заказ не найден")
-
+        order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(user_id)
+            permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав")
+                raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
 
         valid_statuses = ["pending", "paid", "shipped", "delivered", "cancelled"]
         if status_data.status not in valid_statuses:
-            raise HTTPException(400, f"Недопустимый статус. Допустимо: {', '.join(valid_statuses)}")
+            status = ", ".join(valid_statuses)
+            raise InvalidStatusHTTPException(status)
+
+        if status_data.status and status_data.status != order.status:
+            if order.status != "pending":
+                raise OrderCannotModifiedHTTPException(order.status)
 
         old_status = order.status
-
         # Проверяем логику по СТАРОМУ статусу
         if old_status == "cancelled":
-            raise HTTPException(400, "Отмененный заказ можно только вернуть")
+            raise CancelledOrderHTTPException
         if old_status == "delivered":
-            raise HTTPException(400, "Доставленный заказ можно только вернуть")
+            raise DeliveredOrderHTTPException
 
         # Обновляем статус
         update_data = OrderStatusUpdate(
@@ -135,15 +129,11 @@ class OrderService(BaseService):
         )
         await self.db.orders.exit(update_data, id=order_id, exclude_unset=True)
 
-        # Получаем ОБНОВЛЕННЫЙ заказ для уведомления
-        updated_order = await self.db.orders.get_one(id=order_id)
-
         # Отправляем уведомление с НОВЫМ статусом
-        if status_data.status in ["shipped", "delivered"]:
+        updated_order = await self.get_order_with_check(order_id)
+        if status_data.status in ["shipped", "delivered", "paid"]:
             await self.send_status_notification(updated_order, status_data.status)
-
         await self.db.commit()
-
         return {
             "order_id": order_id,
             "old_status": old_status,  # старый статус
@@ -151,60 +141,42 @@ class OrderService(BaseService):
             "message": "Статус обновлен"
         }
     async def exit_order(self, order_id: int, user_id: int, data: OrdersPut):
-        try:
-            order = await self.db.orders.get_one(id=order_id)
-        except NoResultFound:
-            raise HTTPException(404, "Заказ не найден")
-
+        order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(user_id)
+            permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав")
+                raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
 
-        if data.status and data.status != order.status:
-            if order.status != "pending":
-                raise HTTPException(400, f"Заказ в статусе {order.status} нельзя изменять")
+        if order.status != "pending":
+            raise OrderCannotModifiedHTTPException(order.status)
 
         await self.db.orders.exit(data, id=order_id, exclude_unset=False)
         await self.db.commit()
-
-        updated_order = await self.db.orders.get_one(id=order_id)
-        return updated_order
+        return order
 
     async def partial_change_order(self, order_id: int, user_id: int, data: OrdersPatch):
-        try:
-            order = await self.db.orders.get_one(id=order_id)
-        except NoResultFound:
-            raise HTTPException(404, "Заказ не найден")
-
+        order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(user_id)
+            permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав")
+                raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
 
-        if data.status and data.status != order.status:
-            if order.status != "pending":
-                raise HTTPException(400, f"Заказ в статусе {order.status} нельзя изменять")
+        if order.status != "pending":
+            raise OrderCannotModifiedHTTPException(order.status)
 
         await self.db.orders.exit(data, id=order_id, exclude_unset=True)
         await self.db.commit()
-
-        updated_order = await self.db.orders.get_one(id=order_id)
-        return updated_order
+        return order
 
     async def delete_order(self, order_id: int, user_id: int):
-        try:
-            order = await self.db.orders.get_one(id=order_id)
-        except NoResultFound:
-            raise HTTPException(404, "Заказ не найден")
-
+        order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(user_id)
+            permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
-                raise HTTPException(403, "Недостаточно прав")
+                raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
 
         if order.status not in ["pending", "cancelled"]:
-            raise HTTPException(400, f"Заказ в статусе {order.status} нельзя удалить")
+            raise OrderCannotDeletedHTTPException(order.status)
 
         # Удалить связанные order_items
         await self.db.order_items.delete(order_id=order_id)
@@ -215,10 +187,7 @@ class OrderService(BaseService):
 
     async def send_status_notification(self, order, new_status: str):
         # 1. Получить данные пользователя
-        try:
-            user = await self.db.users.get_one(id=order.user_id)
-        except NoResultFound:
-            return
+        user = await AuthService(self.db).get_user_with_check(order.user_id)
 
         # 2. Подготовить данные
         notification_data = {
@@ -235,3 +204,9 @@ class OrderService(BaseService):
             send_order_status_notification_task.delay(notification_data)
         except Exception as e:
             logging.error(f"Не удалось отправить уведомление: {e}")
+
+    async def get_order_with_check(self, order_id: int):
+        try:
+            return await self.db.orders.get_one(id=order_id)
+        except ObjectNotFoundException:
+            raise OrderNotFoundException
