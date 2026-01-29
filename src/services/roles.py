@@ -9,10 +9,7 @@ class RoleService(BaseService):
         return await self.db.roles.get_all()
 
     async def get_role(self, role_name: str):
-        try:
-            return await self.db.roles.get_one(name=role_name)
-        except ObjectNotFoundException:
-            raise RoleNotExistsException
+        return await self.get_role_with_check(role_name)
 
     async def add_role(self, data: RoleAdd):
         role_name = data.name.value

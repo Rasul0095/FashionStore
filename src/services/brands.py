@@ -1,4 +1,4 @@
-from src.exceptions.exception import ObjectNotFoundException, BrandNotFoundException
+from src.exceptions.exception import ObjectNotFoundException, BrandNotFoundException, CannotRemoveBrandHTTPException
 from src.schemas.brands import BrandsAdd, BrandsPatch
 from src.services.base import BaseService
 
@@ -21,12 +21,11 @@ class BrandService(BaseService):
         await self.db.commit()
 
     async def delete_brand(self, brand_id: int):
-        await self.get_brand_with_check(brand_id)
-        products = await self.db.products.get_all(brand_id=brand_id)
-        for product in products:
-            await self.db.reviews.delete(product_id=product.id)
-
-        await self.db.products.delete(brand_id=brand_id)
+        brand = await self.get_brand_with_check(brand_id)
+        products = await self.db.products.get_filtered(brand_id=brand_id)
+        if products:
+            product_ids = [p.id for p in products]
+            raise CannotRemoveBrandHTTPException(brand.name, product_ids)
         await self.db.brands.delete(id=brand_id)
         await self.db.commit()
 

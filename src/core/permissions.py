@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class Permission(str, Enum):
+    # Roles
+    VIEW_ROLES = "view_roles"
+    MANAGE_ROLES = "manage_roles"
+
     # Products
     VIEW_PRODUCTS = "view_products"
     CREATE_PRODUCTS = "create_products"
@@ -60,6 +64,8 @@ class Permission(str, Enum):
 # Наборы прав для каждой роли
 ROLE_PERMISSIONS = {
     "admin": [
+        Permission.VIEW_ROLES,
+        Permission.MANAGE_ROLES,
         Permission.VIEW_PRODUCTS,
         Permission.CREATE_PRODUCTS,
         Permission.EDIT_PRODUCTS,
@@ -96,6 +102,7 @@ ROLE_PERMISSIONS = {
         Permission.VIEW_PRODUCTS,
         Permission.CREATE_PRODUCTS,
         Permission.EDIT_PRODUCTS,
+        Permission.DELETE_PRODUCTS,
         Permission.MANAGE_PRODUCT_IMAGES,
         Permission.VIEW_ORDERS,
         Permission.MANAGE_ORDERS,

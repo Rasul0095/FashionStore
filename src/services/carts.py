@@ -23,14 +23,21 @@ class CartService(BaseService):
         return cart
 
     async def delete_my_cart(self, user_id: int):
-        existing = await self.db.carts.get_filtered(user_id=user_id)
-        if not existing:
-            raise CartNotExistsException
-        await self.db.carts.delete(user_id=user_id)
+        cart = await self.get_cart_user_with_check(user_id)
+        # Удалить все товары в корзине
+        await self.db.cart_items.delete(cart_id=cart.id)
+        # Удалить корзину
+        await self.db.carts.delete(id=cart.id)
         await self.db.commit()
 
     async def get_cart_user_with_check(self, user_id: int):
         try:
             return await self.db.carts.get_one(user_id=user_id)
+        except ObjectNotFoundException:
+            raise CartNotExistsException
+
+    async def get_cart_with_check(self, cart_id: int):
+        try:
+            return await self.db.carts.get_one(id=cart_id)
         except ObjectNotFoundException:
             raise CartNotExistsException

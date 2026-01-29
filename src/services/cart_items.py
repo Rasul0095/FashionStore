@@ -16,17 +16,14 @@ class CartItemService(BaseService):
             permissions = await AuthService(self.db).get_user_permissions(user_id)
             if Permission.VIEW_USERS.value not in permissions:
                 raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
-        try:
-            cart = await self.db.carts.get_one(user_id=target)
-        except ObjectNotFoundException:
-            raise CartNotExistsException
+        cart = await CartService(self.db).get_cart_user_with_check(target)
         return await self.db.cart_items.get_filtered(cart_id=cart.id)
 
     async def get_cart_item(self, item_id: int, user_id: int):
         # Получаем элемент корзины
         item = await self.get_cart_item_with_check(item_id)
         # Получаем корзину элемента
-        cart = await CartService(self.db).get_cart_user_with_check(item.cart_id)
+        cart = await CartService(self.db).get_cart_with_check(item.cart_id)
 
         if cart.user_id != user_id:
             permissions = await AuthService(self.db).get_user_permissions(user_id)
@@ -64,10 +61,7 @@ class CartItemService(BaseService):
     async def update_cart_item(self, user_id: int, item_id: int, data: CartItemsUpdate, exclude_unset: bool = False):
         # Проверить что элемент принадлежит корзине пользователя
         item = await self.get_cart_item_with_check(item_id)
-        try:
-            cart = await self.db.carts.get_one(id=item.cart_id)
-        except ObjectNotFoundException:
-            raise CartNotExistsException
+        cart = await CartService(self.db).get_cart_with_check(item.cart_id)
 
         if cart.user_id != user_id:
             permissions = await AuthService(self.db).get_user_permissions(user_id)
@@ -83,10 +77,7 @@ class CartItemService(BaseService):
 
     async def delete_cart_item(self, item_id: int, user_id: int):
         item = await self.get_cart_item_with_check(item_id)
-        try:
-            cart = await self.db.carts.get_one(id=item.cart_id)
-        except ObjectNotFoundException:
-            raise CartNotExistsException
+        cart = await CartService(self.db).get_cart_with_check(item.cart_id)
 
         if cart.user_id != user_id:
             permissions = await AuthService(self.db).get_user_permissions(user_id)

@@ -87,6 +87,8 @@ async def partial_change_order(
         order = await OrderService(db).partial_change_order(order_id, user_id, order_data)
     except OrderNotFoundException:
         raise OrderNotFoundHTTPException
+    except ProductNotFoundException:
+        raise ProductNotFoundHTTPException
     return {"status": "OK", "data": order}
 
 

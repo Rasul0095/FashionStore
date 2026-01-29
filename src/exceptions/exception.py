@@ -128,6 +128,9 @@ class EmailNotRegisteredHTTPException(FashionStoreHTTPException):
     status_code = 401
     detail = "Пользователь с таким email не зарегистрирован"
 
+class ObjectAlreadyExistsHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Похожий объект уже существует"
 
 class UserNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
@@ -217,9 +220,23 @@ class BrandNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Бранд не найден"
 
+class CannotRemoveBrandHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Нельзя удалить бренд {brand}.Он используется товарами: {product_ids}."
+
+    def __init__(self, brand: str, product_ids: list[int]):
+        super().__init__(brand=brand, product_ids=str(product_ids))
+
 class CategoryNotFoundHTTPException(FashionStoreHTTPException):
     status_code = 404
     detail = "Категория не найдена"
+
+class CannotRemoveCategoryHTTPException(FashionStoreHTTPException):
+    status_code = 400
+    detail = "Нельзя удалить категорию {category}.Он используется товарами: {product_ids}."
+
+    def __init__(self, category: str, product_ids: list[int]):
+        super().__init__(category=category, product_ids=str(product_ids))
 
 class CartNotExistsHTTPException(FashionStoreHTTPException):
     status_code = 404

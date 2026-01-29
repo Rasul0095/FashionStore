@@ -104,7 +104,6 @@ class ReviewService(BaseService):
             for image_path in review.images:
                 if os.path.exists(image_path):
                     os.remove(image_path)
-
         await self.db.reviews.delete(id=review_id)
         await self.db.commit()
 

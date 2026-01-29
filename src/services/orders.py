@@ -11,6 +11,7 @@ from src.repositories.utils import generate_order_number, check_product_availabi
 from src.schemas.order_items import OrderItemsAdd
 from src.schemas.orders import OrdersAddRequest, OrdersAdd, OrderStatusUpdateRequest, OrderStatusUpdate, OrdersPatch, \
     OrdersPut
+from src.schemas.products import ProductUpdate
 from src.services.addresses import AddressService
 from src.services.auth import AuthService
 from src.services.base import BaseService
@@ -177,6 +178,14 @@ class OrderService(BaseService):
 
         if order.status not in ["pending", "cancelled"]:
             raise OrderCannotDeletedHTTPException(order.status)
+
+        order_items = await self.db.order_items.get_filtered(order_id=order_id)
+        for item in order_items:
+            product = await ProductService(self.db).get_product_with_check(item.product_id)
+            update_data = ProductUpdate(
+                stock_quantity=product.stock_quantity + item.quantity,
+                updated_at=datetime.utcnow())
+            await self.db.products.edit(update_data, id=product.id, exclude_unset=True)
 
         # Удалить связанные order_items
         await self.db.order_items.delete(order_id=order_id)

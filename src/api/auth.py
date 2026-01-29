@@ -76,8 +76,6 @@ async def partial_change_user(
 ):
     try:
         await AuthService(db).update_user(user_id, user_data, current_user_id)
-    except UserNotFoundException:
-        raise UserNotFoundHTTPException
     except RoleNotExistsException:
         raise RoleNotExistsHTTPException
     return {"status": "OK"}

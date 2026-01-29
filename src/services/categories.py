@@ -1,4 +1,5 @@
-from src.exceptions.exception import ObjectNotFoundException, CategoryNotFoundException
+from src.exceptions.exception import ObjectNotFoundException, CategoryNotFoundException, \
+    CannotRemoveCategoryHTTPException
 from src.schemas.categories import CategoriesAdd, CategoriesPatch
 from src.services.base import BaseService
 
@@ -21,12 +22,11 @@ class CategoryService(BaseService):
         await self.db.commit()
 
     async def delete_category(self, category_id: int):
-        await self.get_category_with_check(category_id)
-        products = await self.db.products.get_all(category_id=category_id)
-        for product in products:
-            await self.db.reviews.delete(product_id=product.id)
-
-        await self.db.products.delete(category_id=category_id)
+        category = await self.get_category_with_check(category_id)
+        products = await self.db.products.get_filtered(category_id=category_id)
+        if products:
+            product_ids = [p.id for p in products]
+            raise CannotRemoveCategoryHTTPException(category.name, product_ids)
         await self.db.categories.delete(id=category_id)
         await self.db.commit()
 

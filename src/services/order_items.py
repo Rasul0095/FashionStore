@@ -151,8 +151,7 @@ class OrderItemService(BaseService):
         product = await ProductService(self.db).get_product_with_check(item.product_id)
         update_data = ProductUpdate(
             stock_quantity=product.stock_quantity + item.quantity,
-            updated_at=datetime.utcnow()
-        )
+            updated_at=datetime.utcnow())
         await self.db.products.exit(update_data, id=product.id, exclude_unset=True)
         await self.db.order_items.delete(id=item_id)
         await self.recalculate_order_total(order.id)

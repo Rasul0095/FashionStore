@@ -39,7 +39,6 @@ class UserWithHashedPassword(User):
     hashed_password: str
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     role_id: Optional[int] = Field(None, description="Только для админов")

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import  AsyncSession
 from sqlalchemy import select, insert, update, delete
 
 from src.database import Base
-from src.exceptions.exception import ObjectNotFoundException, ObjectAlreadyExistsException
+from src.exceptions.exception import ObjectNotFoundException, ObjectAlreadyExistsHTTPException
 
 
 class BaseRepository:
@@ -55,7 +55,7 @@ class BaseRepository:
         except IntegrityError as ex:
             logging.exception(f"Не удалось добавить данные БД, входные данные={data}")
             if isinstance(ex.orig.__cause__, UniqueViolationError):
-                raise ObjectAlreadyExistsException
+                raise ObjectAlreadyExistsHTTPException
             else:
                 logging.exception(f"Незнакомая ошибка: не удалось добавить данные БД, входные данные={data}")
                 raise ex
