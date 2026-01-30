@@ -1,0 +1,25 @@
+services:
+  store_back_service:
+    container_name: "store_back"
+    build:
+      context: .
+    ports:
+      - "8888:8000"
+    networks:
+    - Mynetwork
+    env_file:
+      - .env
+
+  store_celery_worker_service:
+    container_name: "store_celery_worker"
+    build:
+      context: .
+    networks:
+    - Mynetwork
+    env_file:
+      - .env
+    command: "celery --app=src.tasks.celery_app:celery_instance worker -l INFO"
+
+networks:
+  Mynetwork:
+    external: true
