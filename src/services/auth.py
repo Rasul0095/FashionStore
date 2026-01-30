@@ -1,6 +1,5 @@
 from passlib.context import CryptContext
 import jwt
-from jwt.exceptions import ExpiredSignatureError, DecodeError
 from datetime import datetime, timedelta, timezone
 
 from src.config import settings
@@ -8,7 +7,7 @@ from src.core.permissions import Permission
 from src.exceptions.exception import ObjectAlreadyExistsException, UserAlreadyExistsException, \
     RoleNotExistsException, EmailNotRegisteredException, IncorrectPasswordException, UserRoleNotAssignedException, \
     UserRoleNotAssignedHTTPException, TokenExpiredHTTPException, IncorrectTokenHTTPException, \
-    WrongTokenTypeHTTPException, ObjectNotFoundException, UserNotFoundException, \
+    WrongTokenTypeHTTPException, ObjectNotFoundException, \
     PermissionDeniedHTTPException, CannotDeleteSelfHTTPException, UserNotFoundHTTPException
 from src.schemas.users import UserAddRequest, UserAdd, UserLogin, UserUpdate
 from src.services.base import BaseService
@@ -160,7 +159,7 @@ class AuthService(BaseService):
             return jwt.decode(
                 token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
-        except ExpiredSignatureError:
+        except jwt.ExpiredSignatureError:
             raise TokenExpiredHTTPException
-        except DecodeError:
+        except jwt.DecodeError:
             raise IncorrectTokenHTTPException
