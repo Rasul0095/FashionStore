@@ -2,11 +2,12 @@ from sqlalchemy import select, func
 
 from src.repositories.base import BaseRepository
 from src.models.products import ProductOrm
-from src.schemas.products import Product
+from src.repositories.mappers.mappers import ProductDataMapper
+
 
 class ProductsRepository(BaseRepository):
     model = ProductOrm
-    schemas = Product
+    mapper = ProductDataMapper
 
     async def get_search_by_name(self,
         name: str | None = None,
@@ -30,6 +31,4 @@ class ProductsRepository(BaseRepository):
         query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
         products = result.scalars().all()
-        return [
-            self.schemas.model_validate(model, from_attributes=True) for model in products
-        ]
+        return [self.mapper.map_to_domain_entity(model) for model in products]

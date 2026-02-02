@@ -1,8 +1,8 @@
 from src.repositories.base import BaseRepository
 from src.models.reviews import ReviewOrm
-from src.schemas.reviews import Review
+from src.repositories.mappers.mappers import ReviewDataMapper
 
 
 class ReviewsRepository(BaseRepository):
     model = ReviewOrm
-    schemas = Review
+    mapper = ReviewDataMapper

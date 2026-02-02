@@ -7,15 +7,14 @@ from sqlalchemy import select, insert, update, delete
 
 from src.database import Base
 from src.exceptions.exception import ObjectNotFoundException, ObjectAlreadyExistsHTTPException
+from src.repositories.mappers.base import DataMapper
 
 
 class BaseRepository:
     model = None
-    schemas = None
     model: type[Base]
-    schemas: type[BaseModel]
-    # mapper: DataMapper = None
-    # mapper: type[DataMapper]
+    mapper: DataMapper = None
+    mapper: type[DataMapper]
     session: AsyncSession
 
     def __init__(self, session: AsyncSession):
@@ -27,7 +26,7 @@ class BaseRepository:
     async def get_filtered(self, *filter, **filter_by) -> list[BaseModel]:
         query = select(self.model).filter(*filter).filter_by(**filter_by)
         result = await self.session.execute(query)
-        return [self.schemas.model_validate(model, from_attributes=True) for model in result.scalars().all()]
+        return [self.mapper.map_to_domain_entity(model) for model in result.scalars().all()]
 
     async def get_one_or_none(self, **filter_by) -> BaseModel | None:
         query = select(self.model).filter_by(**filter_by)
@@ -35,7 +34,7 @@ class BaseRepository:
         model = result.scalars().one_or_none()
         if model is None:
             return None
-        return self.schemas.model_validate(model, from_attributes=True)
+        return self.mapper.map_to_domain_entity(model)
 
     async def get_one(self, **filter_by) -> BaseModel:
         query = select(self.model).filter_by(**filter_by)
@@ -44,14 +43,14 @@ class BaseRepository:
             model = result.scalar_one()
         except NoResultFound:
             raise ObjectNotFoundException
-        return self.schemas.model_validate(model, from_attributes=True)
+        return self.mapper.map_to_domain_entity(model)
 
     async def add(self, data: BaseModel) -> BaseModel | None:
         try:
             stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
             result = await self.session.execute(stmt)
             model = result.scalars().one()
-            return self.schemas.model_validate(model, from_attributes=True)
+            return self.mapper.map_to_domain_entity(model)
         except IntegrityError as ex:
             logging.exception(f"Не удалось добавить данные БД, входные данные={data}")
             if isinstance(ex.orig.__cause__, UniqueViolationError):

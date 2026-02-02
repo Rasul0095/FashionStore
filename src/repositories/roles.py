@@ -3,12 +3,12 @@ from sqlalchemy import select, delete, func
 from src.exceptions.exception import  ObjectNotFoundException, UnableDeleteRoleHTTPException
 from src.models import RoleOrm, UserOrm
 from src.repositories.base import BaseRepository
-from src.schemas.roles import Role
+from src.repositories.mappers.mappers import RoleDataMapper
 
 
 class RolesRepository(BaseRepository):
     model = RoleOrm
-    schemas = Role
+    mapper = RoleDataMapper
 
     async def delete_role_with_current_name(self, role_name: str):
         # 1. Найти роль

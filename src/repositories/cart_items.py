@@ -1,8 +1,8 @@
 from src.repositories.base import BaseRepository
 from src.models.cart_items import CartItemOrm
-from src.schemas.cart_items import CartItem
+from src.repositories.mappers.mappers import CartItemDataMapper
 
 
 class CartItemsRepository(BaseRepository):
     model = CartItemOrm
-    schemas = CartItem
+    mapper = CartItemDataMapper

@@ -5,12 +5,13 @@ from sqlalchemy.exc import NoResultFound
 from src.exceptions.exception import EmailNotRegisteredException, UserRoleNotAssignedException
 from src.models import UserOrm, RoleOrm
 from src.repositories.base import BaseRepository
-from src.schemas.users import User, UserWithHashedPassword
+from src.repositories.mappers.mappers import UserDataMapper
+from src.schemas.users import UserWithHashedPassword
 
 
 class UsersRepository(BaseRepository):
     model = UserOrm
-    schemas = User
+    mapper = UserDataMapper
 
     async def get_with_hashed_password(self, email: EmailStr):
         query = select(UserOrm).filter_by(email=email)

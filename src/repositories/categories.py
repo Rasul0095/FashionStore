@@ -1,7 +1,7 @@
 from src.models import CategoryOrm
 from src.repositories.base import BaseRepository
-from src.schemas.categories import Category
+from src.repositories.mappers.mappers import CategoryDataMapper
 
 class CategoriesRepository(BaseRepository):
     model = CategoryOrm
-    schemas = Category
+    mapper = CategoryDataMapper

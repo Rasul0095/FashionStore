@@ -1,7 +1,8 @@
 from src.models import BrandOrm
 from src.repositories.base import BaseRepository
-from src.schemas.brands import Brand
+from src.repositories.mappers.mappers import BrandDataMapper
+
 
 class BrandsRepository(BaseRepository):
     model = BrandOrm
-    schemas = Brand
+    mapper = BrandDataMapper
