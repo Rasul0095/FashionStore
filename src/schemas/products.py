@@ -2,10 +2,12 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
 
+
 class ProductType(str, Enum):
     CLOTHING = "clothing"
     FOOTWEAR = "footwear"
     ACCESSORY = "accessory"
+
 
 class ProductsAddRequest(BaseModel):
     name: str
@@ -19,6 +21,7 @@ class ProductsAddRequest(BaseModel):
     material: str | None = Field(None)
     is_active: bool = Field(default=True)
     images: list = []
+
 
 class ProductsAdd(BaseModel):
     name: str
@@ -38,15 +41,19 @@ class ProductsAdd(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class ProductUpdate(BaseModel):
     stock_quantity: int
     updated_at: datetime
 
+
 class Product(ProductsAdd):
     id: int
 
+
 class ProductImagesUpdate(BaseModel):
     images: list[str]
+
 
 class ProductsPatch(BaseModel):
     name: str | None = None

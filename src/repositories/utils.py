@@ -6,7 +6,11 @@ from fastapi import UploadFile
 from sqlalchemy import func, select, update
 
 from src.exceptions.upload import (
-    InvalidFileExtensionHTTPException, FileTooLargeHTTPException, TooManyFilesHTTPException, NoFilesUploadedHTTPException)
+    InvalidFileExtensionHTTPException,
+    FileTooLargeHTTPException,
+    TooManyFilesHTTPException,
+    NoFilesUploadedHTTPException,
+)
 from src.models import CartOrm
 from src.models.cart_items import CartItemOrm
 from src.models.products import ProductOrm
@@ -15,9 +19,7 @@ from src.models.products import ProductOrm
 def get_update_stock_for_cart_query(user_id: int):
     """Обновления остатков товаров в корзине"""
     cart_subquery = (
-        select(CartOrm.id)
-        .where(CartOrm.user_id == user_id)
-        .scalar_subquery()
+        select(CartOrm.id).where(CartOrm.user_id == user_id).scalar_subquery()
     )
 
     cart_items_cte = (
@@ -28,21 +30,20 @@ def get_update_stock_for_cart_query(user_id: int):
         .join(ProductOrm, ProductOrm.id == CartItemOrm.product_id)
         .where(
             CartItemOrm.cart_id == cart_subquery,
-            ProductOrm.stock_quantity >= CartItemOrm.quantity
+            ProductOrm.stock_quantity >= CartItemOrm.quantity,
         )
         .cte("cart_items_cte")
     )
 
     update_stmt = (
         update(ProductOrm)
-        .values(
-            stock_quantity=ProductOrm.stock_quantity - cart_items_cte.c.quantity
-        )
+        .values(stock_quantity=ProductOrm.stock_quantity - cart_items_cte.c.quantity)
         .where(ProductOrm.id == cart_items_cte.c.product_id)
         .returning(ProductOrm.id)
     )
 
     return update_stmt
+
 
 def check_product_availability_and_calculate_simple(user_id: int):
     cart_query = (
@@ -52,23 +53,22 @@ def check_product_availability_and_calculate_simple(user_id: int):
             ProductOrm.price,
             ProductOrm.stock_quantity,
             ProductOrm.name,
-            (ProductOrm.stock_quantity >= CartItemOrm.quantity).label("available")
+            (ProductOrm.stock_quantity >= CartItemOrm.quantity).label("available"),
         )
         .join(ProductOrm, ProductOrm.id == CartItemOrm.product_id)
         .join(CartOrm, CartOrm.id == CartItemOrm.cart_id)
         .where(CartOrm.user_id == user_id)
     ).cte("cart_query")
 
-    summary_query = (
-        select(
-            func.sum(cart_query.c.price * cart_query.c.quantity)
-            .filter(cart_query.c.available == True).label("total_amount"),
-            func.count().filter(cart_query.c.available == True).label("available_items"),
-            func.count().label("total_items")
-        )
-        .select_from(cart_query)
-    )
+    summary_query = select(
+        func.sum(cart_query.c.price * cart_query.c.quantity)
+        .filter(cart_query.c.available)
+        .label("total_amount"),
+        func.count().filter(cart_query.c.available).label("available_items"),
+        func.count().label("total_items"),
+    ).select_from(cart_query)
     return summary_query
+
 
 def generate_sku(product_type: str, brand_id: int, category_id: int) -> str:
     # Пример: CLOTH-NIKE-123-20241217-ABC123
@@ -76,16 +76,18 @@ def generate_sku(product_type: str, brand_id: int, category_id: int) -> str:
     unique = str(uuid.uuid4())[:6].upper()
     return f"{product_type[:5].upper()}-{brand_id}-{category_id}-{timestamp}-{unique}"
 
+
 def generate_order_number(user_id: int) -> str:
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     return f"ORD-{timestamp}-{user_id:06d}"
 
+
 async def save_uploaded_files(
-        files: list[UploadFile],
-        prefix: str,
-        upload_dir: str = "src/static",
-        max_file_size: int = 10 * 1024 * 1024,
-        allowed_extensions: set = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+    files: list[UploadFile],
+    prefix: str,
+    upload_dir: str = "src/static",
+    max_file_size: int = 10 * 1024 * 1024,
+    allowed_extensions: set = {".jpg", ".jpeg", ".png", ".gif", ".webp"},
 ) -> list[str]:
     if not files:
         raise NoFilesUploadedHTTPException()
@@ -106,12 +108,14 @@ async def save_uploaded_files(
         data = await file.read()
 
         if len(data) > max_file_size:
-            raise FileTooLargeHTTPException(file.filename, max_file_size // 1024 // 1024)
+            raise FileTooLargeHTTPException(
+                file.filename, max_file_size // 1024 // 1024
+            )
 
         unique_name = f"{prefix}_{uuid.uuid4()}{ext}"
         file_path = UPLOAD_DIR / unique_name
 
-        async with aiofiles.open(file_path, 'wb') as f:
+        async with aiofiles.open(file_path, "wb") as f:
             await f.write(data)
 
         saved_paths.append(str(file_path))

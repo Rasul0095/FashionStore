@@ -1,4 +1,8 @@
-from src.exceptions.exception import ObjectNotFoundException, BrandNotFoundException, CannotRemoveBrandHTTPException
+from src.exceptions.exception import (
+    ObjectNotFoundException,
+    BrandNotFoundException,
+    CannotRemoveBrandHTTPException,
+)
 from src.schemas.brands import BrandsAdd, BrandsPatch
 from src.services.base import BaseService
 
@@ -15,7 +19,9 @@ class BrandService(BaseService):
         await self.db.commit()
         return brand
 
-    async def update_brand(self, data: BrandsPatch, brand_id: int, exclude_unset: bool = False):
+    async def update_brand(
+        self, data: BrandsPatch, brand_id: int, exclude_unset: bool = False
+    ):
         await self.get_brand_with_check(brand_id)
         await self.db.brands.exit(data, exclude_unset=exclude_unset, id=brand_id)
         await self.db.commit()

@@ -3,24 +3,30 @@ from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep, require_permission
 from src.core.permissions import Permission
-from src.exceptions.exception import CategoryNotFoundException, CategoryNotFoundHTTPException
+from src.exceptions.exception import (
+    CategoryNotFoundException,
+    CategoryNotFoundHTTPException,
+)
 from src.schemas.categories import CategoriesAdd, CategoriesPatch
 from src.services.categories import CategoryService
 
 
 router = APIRouter(prefix="/categories", tags=["Категории"])
 
+
 @router.get("")
 @cache(expire=10)
-async def get_categories(db:DBDep, user_id: int = require_permission(Permission.VIEW_CATEGORIES)):
+async def get_categories(
+    db: DBDep, user_id: int = require_permission(Permission.VIEW_CATEGORIES)
+):
     return await CategoryService(db).get_categories()
 
 
 @router.get("/{category_id}")
 async def get_category(
-    db:DBDep,
+    db: DBDep,
     category_id: int,
-    user_id: int = require_permission(Permission.VIEW_CATEGORIES)
+    user_id: int = require_permission(Permission.VIEW_CATEGORIES),
 ):
     try:
         return await CategoryService(db).get_category(category_id)
@@ -37,7 +43,7 @@ async def add_category(
                 "value": {
                     "name": "Верхняя одежда",
                     "slug": "outerwear",
-                    "product_type": "clothing"
+                    "product_type": "clothing",
                 }
             },
             "Футболки": {
@@ -45,30 +51,30 @@ async def add_category(
                 "value": {
                     "name": "Футболки",
                     "slug": "t-shirts",
-                    "product_type": "clothing"
-                }
+                    "product_type": "clothing",
+                },
             },
             "Джинсы": {
                 "summary": "Категория джинсов",
                 "value": {
                     "name": "Джинсы",
                     "slug": "jeans",
-                    "product_type": "clothing"
-                }
+                    "product_type": "clothing",
+                },
             },
             "Куртки": {
                 "summary": "Категория курток",
                 "value": {
                     "name": "Куртки",
                     "slug": "jackets",
-                    "product_type": "clothing"
-                }
+                    "product_type": "clothing",
+                },
             },
             "Кроссовки": {
                 "value": {
                     "name": "Кроссовки",
                     "slug": "sneakers",
-                    "product_type": "footwear"
+                    "product_type": "footwear",
                 }
             },
             "Беговые кроссовки": {
@@ -76,60 +82,52 @@ async def add_category(
                 "value": {
                     "name": "Беговые кроссовки",
                     "slug": "running-sneakers",
-                    "product_type": "footwear"
-                }
+                    "product_type": "footwear",
+                },
             },
             "Туфли": {
                 "summary": "Категория туфель",
-                "value": {
-                    "name": "Туфли",
-                    "slug": "shoes",
-                    "product_type": "footwear"
-                }
+                "value": {"name": "Туфли", "slug": "shoes", "product_type": "footwear"},
             },
             "Сандалии": {
                 "summary": "Категория сандалий",
                 "value": {
                     "name": "Сандалии",
                     "slug": "sandals",
-                    "product_type": "footwear"
-                }
+                    "product_type": "footwear",
+                },
             },
             "Сумки": {
                 "summary": "Категория сумок",
-                "value": {
-                    "name": "Сумки",
-                    "slug": "bags",
-                    "product_type": "accessory"
-                }
+                "value": {"name": "Сумки", "slug": "bags", "product_type": "accessory"},
             },
             "Ремни": {
                 "summary": "Категория ремней",
                 "value": {
                     "name": "Ремни",
                     "slug": "belts",
-                    "product_type": "accessory"
-                }
+                    "product_type": "accessory",
+                },
             },
             "Шарфы": {
                 "summary": "Категория шарфов",
                 "value": {
                     "name": "Шарфы",
                     "slug": "scarves",
-                    "product_type": "accessory"
-                }
+                    "product_type": "accessory",
+                },
             },
             "Головные уборы": {
                 "summary": "Категория головных уборов",
                 "value": {
                     "name": "Головные уборы",
                     "slug": "hats",
-                    "product_type": "accessory"
-                }
+                    "product_type": "accessory",
+                },
             },
         }
     ),
-    user_id: int = require_permission(Permission.MANAGE_CATEGORIES)
+    user_id: int = require_permission(Permission.MANAGE_CATEGORIES),
 ):
     category = await CategoryService(db).add_category(category_data)
     return {"status": "OK", "data": category}
@@ -137,10 +135,10 @@ async def add_category(
 
 @router.put("/{category_id}")
 async def exit_category(
-    db:DBDep,
+    db: DBDep,
     category_id: int,
     category_data: CategoriesPatch,
-    user_id: int = require_permission(Permission.MANAGE_CATEGORIES)
+    user_id: int = require_permission(Permission.MANAGE_CATEGORIES),
 ):
     try:
         await CategoryService(db).update_category(category_data, category_id)
@@ -151,13 +149,15 @@ async def exit_category(
 
 @router.patch("/{category_id}")
 async def partial_change_category(
-    db:DBDep,
+    db: DBDep,
     category_id: int,
     category_data: CategoriesPatch,
-    user_id: int = require_permission(Permission.MANAGE_CATEGORIES)
+    user_id: int = require_permission(Permission.MANAGE_CATEGORIES),
 ):
     try:
-        await CategoryService(db).update_category(category_data, category_id, exclude_unset=True)
+        await CategoryService(db).update_category(
+            category_data, category_id, exclude_unset=True
+        )
     except CategoryNotFoundException:
         raise CategoryNotFoundHTTPException
     return {"status": "OK"}
@@ -165,9 +165,9 @@ async def partial_change_category(
 
 @router.delete("/{category_id}")
 async def delete_category(
-    db:DBDep,
+    db: DBDep,
     category_id: int,
-    user_id: int = require_permission(Permission.DELETE_CATEGORIES)
+    user_id: int = require_permission(Permission.DELETE_CATEGORIES),
 ):
     try:
         await CategoryService(db).delete_category(category_id)

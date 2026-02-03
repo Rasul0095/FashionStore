@@ -4,8 +4,8 @@ from src.database import Base
 
 
 class BrandOrm(Base):
-	__tablename__ = "brands"
+    __tablename__ = "brands"
 
-	id: Mapped[int] = mapped_column(primary_key=True)
-	name: Mapped[str] = mapped_column(unique=True)
-	description: Mapped[Optional[str]]
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    description: Mapped[Optional[str]]

@@ -13,7 +13,6 @@ class Permission(str, Enum):
     DELETE_PRODUCTS = "delete_products"
     MANAGE_PRODUCT_IMAGES = "manage_product_images"  # загрузка изображений
 
-
     # Orders
     VIEW_ORDERS = "view_orders"
     MANAGE_ORDERS = "manage_orders"
@@ -136,12 +135,12 @@ ROLE_PERMISSIONS = {
         Permission.MANAGE_CART,
         Permission.MANAGE_ADDRESSES,  # свои адреса
         Permission.MANAGE_CART_ITEMS,  # свою корзину
-        Permission.CREATE_REVIEWS,     # свои отзывы
-        Permission.MODERATE_REVIEWS,     # свои отзывы
-        Permission.DELETE_REVIEWS,# свои отзывы
+        Permission.CREATE_REVIEWS,  # свои отзывы
+        Permission.MODERATE_REVIEWS,  # свои отзывы
+        Permission.DELETE_REVIEWS,  # свои отзывы
         Permission.DELETE_ADDRESSES,
         Permission.VIEW_ADDRESSES,
         Permission.VIEW_CART_ITEMS,
         Permission.VIEW_ANALYTICS,
-    ]
+    ],
 }

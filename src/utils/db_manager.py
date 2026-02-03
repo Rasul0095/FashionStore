@@ -12,7 +12,7 @@ from src.repositories.users import UsersRepository
 
 
 class DBManager:
-    def __init__(self,  session_factory):
+    def __init__(self, session_factory):
         self.session_factory = session_factory
 
     async def __aenter__(self):
@@ -29,7 +29,6 @@ class DBManager:
         self.reviews = ReviewsRepository(self.session)
         self.roles = RolesRepository(self.session)
         self.users = UsersRepository(self.session)
-
 
         return self
 

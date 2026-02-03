@@ -5,6 +5,7 @@ from src.exceptions.exception import CartNotExistsException, ObjectNotFoundExcep
 from src.schemas.carts import CartsAdd
 from src.services.base import BaseService
 
+
 class CartService(BaseService):
     async def get_my_cart(self, user_id: int):
         existing = await self.db.carts.get_filtered(user_id=user_id)
@@ -14,9 +15,7 @@ class CartService(BaseService):
 
     async def add_cart(self, user_id: UserIdDep):
         cart_data = CartsAdd(
-            user_id=user_id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            user_id=user_id, created_at=datetime.utcnow(), updated_at=datetime.utcnow()
         )
         cart = await self.db.carts.add(cart_data)
         await self.db.commit()

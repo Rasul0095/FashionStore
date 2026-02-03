@@ -4,11 +4,22 @@ from datetime import datetime, timedelta, timezone
 
 from src.config import settings
 from src.core.permissions import Permission
-from src.exceptions.exception import ObjectAlreadyExistsException, UserAlreadyExistsException, \
-    RoleNotExistsException, EmailNotRegisteredException, IncorrectPasswordException, UserRoleNotAssignedException, \
-    UserRoleNotAssignedHTTPException, TokenExpiredHTTPException, IncorrectTokenHTTPException, \
-    WrongTokenTypeHTTPException, ObjectNotFoundException, \
-    PermissionDeniedHTTPException, CannotDeleteSelfHTTPException, UserNotFoundHTTPException
+from src.exceptions.exception import (
+    ObjectAlreadyExistsException,
+    UserAlreadyExistsException,
+    RoleNotExistsException,
+    EmailNotRegisteredException,
+    IncorrectPasswordException,
+    UserRoleNotAssignedException,
+    UserRoleNotAssignedHTTPException,
+    TokenExpiredHTTPException,
+    IncorrectTokenHTTPException,
+    WrongTokenTypeHTTPException,
+    ObjectNotFoundException,
+    PermissionDeniedHTTPException,
+    CannotDeleteSelfHTTPException,
+    UserNotFoundHTTPException,
+)
 from src.schemas.users import UserAddRequest, UserAdd, UserLogin, UserUpdate
 from src.services.base import BaseService
 from src.services.roles import RoleService
@@ -24,7 +35,8 @@ class AuthService(BaseService):
             "email": user.email,
             "role_id": user.role_id,
             "first_name": user.first_name,
-            "last_name": user.last_name}
+            "last_name": user.last_name,
+        }
 
     async def register_user(self, data: UserAddRequest, role_name: str = "user"):
         role = await RoleService(self.db).get_role_with_check(role_name)
@@ -35,7 +47,8 @@ class AuthService(BaseService):
             last_name=data.last_name,
             email=data.email,
             hashed_password=hashed_password,
-            created_at=datetime.utcnow())
+            created_at=datetime.utcnow(),
+        )
         try:
             await self.db.users.add(user_data)
             await self.db.commit()
@@ -48,19 +61,25 @@ class AuthService(BaseService):
             raise EmailNotRegisteredException
         if not self.verify_password(data.password, user.hashed_password):
             raise IncorrectPasswordException
-        tokens = self.create_tokens_pair({
-            "user_id": user.id,
-            "role_id": user.role_id,
-            "email": user.email,})
+        tokens = self.create_tokens_pair(
+            {
+                "user_id": user.id,
+                "role_id": user.role_id,
+                "email": user.email,
+            }
+        )
         return tokens
 
     async def refresh_tokens(self, refresh_token: str):
         payload = self.verify_token_type(refresh_token, "refresh")
         user = await self.db.users.get_one(id=payload["user_id"])
-        return self.create_tokens_pair({
-            "user_id": user.id,
-            "role_id": user.role_id,
-            "email": user.email, })
+        return self.create_tokens_pair(
+            {
+                "user_id": user.id,
+                "role_id": user.role_id,
+                "email": user.email,
+            }
+        )
 
     async def get_user_permissions(self, user_id: int):
         try:
@@ -78,12 +97,16 @@ class AuthService(BaseService):
         # Проверяем что пользователь существует
         await self.get_user_with_check(user_id)
         if user_id != current_user_id:
-            permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
+            permissions = await self.db.users.get_current_user_role_for_permissions(
+                current_user_id
+            )
             if Permission.EDIT_USERS.value not in permissions:
                 raise PermissionDeniedHTTPException(Permission.EDIT_USERS.value)
 
         if data.role_id is not None:
-            permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
+            permissions = await self.db.users.get_current_user_role_for_permissions(
+                current_user_id
+            )
             if Permission.EDIT_USERS.value not in permissions:
                 raise PermissionDeniedHTTPException(Permission.EDIT_USERS.value)
 
@@ -97,7 +120,9 @@ class AuthService(BaseService):
     async def delete_user(self, user_id: int, current_user_id: int):
         if user_id == current_user_id:
             raise CannotDeleteSelfHTTPException
-        permissions = await self.db.users.get_current_user_role_for_permissions(current_user_id)
+        permissions = await self.db.users.get_current_user_role_for_permissions(
+            current_user_id
+        )
         if Permission.DELETE_USERS.value not in permissions:
             raise PermissionDeniedHTTPException(Permission.DELETE_USERS.value)
         await self.get_user_with_check(user_id)
@@ -123,17 +148,24 @@ class AuthService(BaseService):
 
     def create_access_token(self, data: dict):
         to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp":expire, "type": "access"})
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        to_encode.update({"exp": expire, "type": "access"})
         encoded_jwt = jwt.encode(
-            to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+            to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+        )
         return encoded_jwt
 
     def create_refresh_token(self, data: dict):
         to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(timezone.utc) + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
         to_encode.update({"exp": expire, "type": "refresh"})
-        return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+        return jwt.encode(
+            to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+        )
 
     def create_tokens_pair(self, data: dict):
         """Создает пару access + refresh токенов"""

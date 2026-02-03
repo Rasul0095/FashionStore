@@ -1,5 +1,8 @@
-from src.exceptions.exception import ObjectNotFoundException, CategoryNotFoundException, \
-    CannotRemoveCategoryHTTPException
+from src.exceptions.exception import (
+    ObjectNotFoundException,
+    CategoryNotFoundException,
+    CannotRemoveCategoryHTTPException,
+)
 from src.schemas.categories import CategoriesAdd, CategoriesPatch
 from src.services.base import BaseService
 
@@ -16,7 +19,9 @@ class CategoryService(BaseService):
         await self.db.commit()
         return category
 
-    async def update_category(self, data: CategoriesPatch, category_id: int, exclude_unset: bool = False):
+    async def update_category(
+        self, data: CategoriesPatch, category_id: int, exclude_unset: bool = False
+    ):
         await self.get_category_with_check(category_id)
         await self.db.categories.exit(data, exclude_unset=exclude_unset, id=category_id)
         await self.db.commit()

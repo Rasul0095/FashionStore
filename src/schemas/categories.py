@@ -7,13 +7,16 @@ class ProductType(str, Enum):
     FOOTWEAR = "footwear"
     ACCESSORY = "accessory"
 
+
 class CategoriesAdd(BaseModel):
     name: str
     slug: str
     product_type: ProductType
 
+
 class Category(CategoriesAdd):
     id: int
+
 
 class CategoriesPatch(BaseModel):
     name: str | None = Field(None)

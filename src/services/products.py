@@ -1,9 +1,13 @@
-from fastapi import HTTPException, UploadFile
-from sqlalchemy.exc import NoResultFound
+from fastapi import UploadFile
 from datetime import datetime
 
 from src.exceptions.exception import ObjectNotFoundException, ProductNotFoundException
-from src.schemas.products import ProductsAddRequest, ProductsAdd, ProductImagesUpdate, ProductsPatch
+from src.schemas.products import (
+    ProductsAddRequest,
+    ProductsAdd,
+    ProductImagesUpdate,
+    ProductsPatch,
+)
 from src.services.base import BaseService
 from src.api.dependencies import PaginationDep
 from src.repositories.utils import generate_sku, save_uploaded_files
@@ -12,7 +16,8 @@ from src.services.categories import CategoryService
 
 
 class ProductService(BaseService):
-    async def get_products(self,
+    async def get_products(
+        self,
         pagination: PaginationDep,
         name: str | None = None,
         description: str | None = None,
@@ -24,15 +29,18 @@ class ProductService(BaseService):
             description=description,
             product_type=product_type,
             limit=per_page,
-            offset=per_page * (pagination.page - 1),)
+            offset=per_page * (pagination.page - 1),
+        )
 
     async def get_product(self, product_id: int):
         return await self.get_product_with_check(product_id)
 
-    async def add_product(self,
+    async def add_product(
+        self,
         category_id: int,
         brand_id: int,
-        data: ProductsAddRequest,):
+        data: ProductsAddRequest,
+    ):
         await CategoryService(self.db).get_category_with_check(category_id)
         await BrandService(self.db).get_brand_with_check(brand_id)
         sku = generate_sku(data.product_type, category_id, brand_id)
@@ -53,24 +61,23 @@ class ProductService(BaseService):
         saved_paths = await save_uploaded_files(
             files=images,
             prefix=f"review_{product_id}",
-            upload_dir="src/static/images-products")
+            upload_dir="src/static/images-products",
+        )
 
         update_data = ProductImagesUpdate(images=saved_paths)
         # Обновляем БД
-        await self.db.products.exit(
-            update_data,
-            exclude_unset=True,
-            id=product_id
-        )
+        await self.db.products.exit(update_data, exclude_unset=True, id=product_id)
         await self.db.commit()
         return {"saved_paths": saved_paths, "product_id": product_id}
 
-    async def update_product(self,
+    async def update_product(
+        self,
         product_id: int,
         category_id: int,
         brand_id: int,
         data: ProductsPatch,
-        exclude_unset: bool = False):
+        exclude_unset: bool = False,
+    ):
         await self.get_product_with_check(product_id)
         await CategoryService(self.db).get_category_with_check(category_id)
         await BrandService(self.db).get_brand_with_check(brand_id)
@@ -85,6 +92,7 @@ class ProductService(BaseService):
 
         if product.images:
             import os
+
             for image_path in product.images:
                 if os.path.exists(image_path):
                     os.remove(image_path)

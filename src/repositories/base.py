@@ -2,11 +2,14 @@ import logging
 from pydantic import BaseModel
 from asyncpg import UniqueViolationError
 from sqlalchemy.exc import NoResultFound, IntegrityError
-from sqlalchemy.ext.asyncio import  AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, update, delete
 
 from src.database import Base
-from src.exceptions.exception import ObjectNotFoundException, ObjectAlreadyExistsHTTPException
+from src.exceptions.exception import (
+    ObjectNotFoundException,
+    ObjectAlreadyExistsHTTPException,
+)
 from src.repositories.mappers.base import DataMapper
 
 
@@ -26,7 +29,9 @@ class BaseRepository:
     async def get_filtered(self, *filter, **filter_by) -> list[BaseModel]:
         query = select(self.model).filter(*filter).filter_by(**filter_by)
         result = await self.session.execute(query)
-        return [self.mapper.map_to_domain_entity(model) for model in result.scalars().all()]
+        return [
+            self.mapper.map_to_domain_entity(model) for model in result.scalars().all()
+        ]
 
     async def get_one_or_none(self, **filter_by) -> BaseModel | None:
         query = select(self.model).filter_by(**filter_by)
@@ -56,14 +61,18 @@ class BaseRepository:
             if isinstance(ex.orig.__cause__, UniqueViolationError):
                 raise ObjectAlreadyExistsHTTPException
             else:
-                logging.exception(f"Незнакомая ошибка: не удалось добавить данные БД, входные данные={data}")
+                logging.exception(
+                    f"Незнакомая ошибка: не удалось добавить данные БД, входные данные={data}"
+                )
                 raise ex
 
     async def add_bulk(self, data: [BaseModel]):
         add_stmt = insert(self.model).values([item.model_dump() for item in data])
         await self.session.execute(add_stmt)
 
-    async def exit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
+    async def exit(
+        self, data: BaseModel, exclude_unset: bool = False, **filter_by
+    ) -> None:
         stmt = (
             update(self.model)
             .filter_by(**filter_by)

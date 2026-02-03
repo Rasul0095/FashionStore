@@ -2,29 +2,42 @@ from fastapi import APIRouter, Query, Body, UploadFile, File
 
 from src.api.dependencies import DBDep, PaginationDep, require_permission
 from src.core.permissions import Permission
-from src.exceptions.exception import ProductNotFoundException, ProductNotFoundHTTPException, CategoryNotFoundException, \
-    CategoryNotFoundHTTPException, BrandNotFoundException, BrandNotFoundHTTPException
+from src.exceptions.exception import (
+    ProductNotFoundException,
+    ProductNotFoundHTTPException,
+    CategoryNotFoundException,
+    CategoryNotFoundHTTPException,
+    BrandNotFoundException,
+    BrandNotFoundHTTPException,
+)
 from src.schemas.products import ProductsAddRequest, ProductsPatch
 from src.services.products import ProductService
 
 router = APIRouter(prefix="/products", tags=["Товары"])
 
+
 @router.get("")
 async def get_products(
-    db:DBDep,
+    db: DBDep,
     pagination: PaginationDep,
     name: str | None = Query(None, description="Название товара"),
     description: str | None = Query(None, description="Описание товара"),
-    product_type: str | None = Query(None, description="Тип товара (clothing, footwear, accessory)"),
-    user_id: int = require_permission(Permission.VIEW_PRODUCTS),):
-    return await ProductService(db).get_products(pagination, name, description, product_type)
+    product_type: str | None = Query(
+        None, description="Тип товара (clothing, footwear, accessory)"
+    ),
+    user_id: int = require_permission(Permission.VIEW_PRODUCTS),
+):
+    return await ProductService(db).get_products(
+        pagination, name, description, product_type
+    )
 
 
 @router.get("{product_id}")
 async def get_product(
-    db:DBDep,
+    db: DBDep,
     product_id: int,
-    user_id: int = require_permission(Permission.VIEW_PRODUCTS),):
+    user_id: int = require_permission(Permission.VIEW_PRODUCTS),
+):
     try:
         return await ProductService(db).get_product(product_id)
     except ProductNotFoundException:
@@ -51,7 +64,7 @@ async def add_product(
                     "color": "Черный",
                     "gender": "male",
                     "material": "Хлопок 100%",
-                }
+                },
             },
             "Джинсы (Одежда)": {
                 "summary": "Женские джинсы",
@@ -65,7 +78,7 @@ async def add_product(
                     "color": "Синий",
                     "gender": "female",
                     "material": "Деним",
-                }
+                },
             },
             "Куртка (Одежда)": {
                 "summary": "Зимняя куртка",
@@ -79,7 +92,7 @@ async def add_product(
                     "color": "Красный",
                     "gender": "unisex",
                     "material": "Нейлон, пух",
-                }
+                },
             },
             "Кроссовки (Обувь)": {
                 "summary": "Беговые кроссовки",
@@ -93,7 +106,7 @@ async def add_product(
                     "color": "Белый",
                     "gender": "male",
                     "material": "Сетка, резина",
-                }
+                },
             },
             "Туфли (Обувь)": {
                 "summary": "Кожаные туфли",
@@ -107,7 +120,7 @@ async def add_product(
                     "color": "Черный",
                     "gender": "male",
                     "material": "Натуральная кожа",
-                }
+                },
             },
             "Сандалии (Обувь)": {
                 "summary": "Летние сандалии",
@@ -121,7 +134,7 @@ async def add_product(
                     "color": "Бежевый",
                     "gender": "female",
                     "material": "Эко-кожа",
-                }
+                },
             },
             "Сумка (Аксессуар)": {
                 "summary": "Кожаная сумка",
@@ -135,7 +148,7 @@ async def add_product(
                     "color": "Коричневый",
                     "gender": "female",
                     "material": "Натуральная кожа",
-                }
+                },
             },
             "Ремень (Аксессуар)": {
                 "summary": "Кожаный ремень",
@@ -148,7 +161,7 @@ async def add_product(
                     "size": "L",
                     "color": "Черный",
                     "gender": "male",
-                }
+                },
             },
             "Шарф (Аксессуар)": {
                 "summary": "Шерстяной шарф",
@@ -162,13 +175,15 @@ async def add_product(
                     "color": "Серый",
                     "gender": "unisex",
                     "material": "Шерсть 80%, акрил 20%",
-                }
-            }
+                },
+            },
         }
     ),
 ):
     try:
-        product = await ProductService(db).add_product(category_id, brand_id, product_data)
+        product = await ProductService(db).add_product(
+            category_id, brand_id, product_data
+        )
     except CategoryNotFoundException:
         raise CategoryNotFoundHTTPException
     except BrandNotFoundException:
@@ -181,7 +196,8 @@ async def add_product_images(
     product_id: int,
     db: DBDep,
     images: list[UploadFile] = File(..., description="Список изображений товара"),
-    user_id: int = require_permission(Permission.MANAGE_PRODUCT_IMAGES),):
+    user_id: int = require_permission(Permission.MANAGE_PRODUCT_IMAGES),
+):
     try:
         await ProductService(db).add_product_images(product_id, images)
     except ProductNotFoundException:
@@ -189,7 +205,8 @@ async def add_product_images(
     return {
         "status": "OK",
         "message": f"Загрузка {len(images)} изображений начата",
-        "product_id": product_id}
+        "product_id": product_id,
+    }
 
 
 @router.put("/{product_id}")
@@ -199,9 +216,12 @@ async def exit_product(
     category_id: int,
     brand_id: int,
     product_data: ProductsPatch,
-    user_id: int = require_permission(Permission.EDIT_PRODUCTS),):
+    user_id: int = require_permission(Permission.EDIT_PRODUCTS),
+):
     try:
-        await ProductService(db).update_product(product_id, category_id, brand_id, product_data)
+        await ProductService(db).update_product(
+            product_id, category_id, brand_id, product_data
+        )
     except ProductNotFoundException:
         raise ProductNotFoundHTTPException
     except CategoryNotFoundException:
@@ -218,14 +238,12 @@ async def partial_change_product(
     category_id: int,
     brand_id: int,
     product_data: ProductsPatch,
-    user_id: int = require_permission(Permission.EDIT_PRODUCTS),):
+    user_id: int = require_permission(Permission.EDIT_PRODUCTS),
+):
     try:
         await ProductService(db).update_product(
-            product_id,
-            category_id,
-            brand_id,
-            product_data,
-            exclude_unset=True)
+            product_id, category_id, brand_id, product_data, exclude_unset=True
+        )
     except ProductNotFoundException:
         raise ProductNotFoundHTTPException
     except CategoryNotFoundException:
@@ -239,7 +257,8 @@ async def partial_change_product(
 async def delete_product(
     db: DBDep,
     product_id: int,
-    user_id: int = require_permission(Permission.DELETE_PRODUCTS),):
+    user_id: int = require_permission(Permission.DELETE_PRODUCTS),
+):
     try:
         await ProductService(db).delete_product(product_id)
     except ProductNotFoundException:

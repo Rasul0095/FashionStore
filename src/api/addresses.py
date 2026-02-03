@@ -2,17 +2,23 @@ from fastapi import APIRouter, Body, Query
 
 from src.api.dependencies import DBDep, require_permission
 from src.core.permissions import Permission
-from src.exceptions.exception import AddressNotFoundException, AddressNotFoundHTTPException
+from src.exceptions.exception import (
+    AddressNotFoundException,
+    AddressNotFoundHTTPException,
+)
 from src.schemas.addresses import AddressesAddRequest, AddressesUpdate, AddressesPatch
 from src.services.addresses import AddressService
 
 router = APIRouter(prefix="/addresses", tags=["Адреса"])
 
+
 @router.get("")
 async def get_addresses(
     db: DBDep,
-    user_id: int  = require_permission(Permission.VIEW_ADDRESSES),
-    target_user_id: int | None = Query(None, description="ID пользователя (только для админов)")
+    user_id: int = require_permission(Permission.VIEW_ADDRESSES),
+    target_user_id: int | None = Query(
+        None, description="ID пользователя (только для админов)"
+    ),
 ):
     return await AddressService(db).get_user_addresses(user_id, target_user_id)
 
@@ -21,7 +27,8 @@ async def get_addresses(
 async def get_address(
     db: DBDep,
     address_id: int,
-    user_id: int = require_permission(Permission.VIEW_ADDRESSES)):
+    user_id: int = require_permission(Permission.VIEW_ADDRESSES),
+):
     try:
         return await AddressService(db).get_address(address_id, user_id)
     except AddressNotFoundException:
@@ -51,7 +58,8 @@ async def add_address(
                 }
             },
         }
-    )):
+    ),
+):
     address = await AddressService(db).add_address(user_id, address_data)
     return {"status": "OK", "data": address}
 
@@ -76,10 +84,11 @@ async def partial_change_address(
     db: DBDep,
     address_data: AddressesPatch,
     user_id: int = require_permission(Permission.MANAGE_ADDRESSES),
-
 ):
     try:
-        await AddressService(db).partial_change_address(address_id, user_id, address_data, exclude_unset=True)
+        await AddressService(db).partial_change_address(
+            address_id, user_id, address_data, exclude_unset=True
+        )
     except AddressNotFoundException:
         raise AddressNotFoundHTTPException
     return {"status": "OK"}

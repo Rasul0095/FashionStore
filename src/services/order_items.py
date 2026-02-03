@@ -1,9 +1,16 @@
 from datetime import datetime
 
 from src.core.permissions import Permission
-from src.exceptions.exception import PermissionDeniedHTTPException, ObjectNotFoundException, OrderItemNotFoundException, \
-    OrderCannotModifiedHTTPException, NotAllProductsAvailableHTTPException, ProductAlreadyInOrderHTTPException, \
-    NotEnoughProductHTTPException, OrderCannotDeletedHTTPException
+from src.exceptions.exception import (
+    PermissionDeniedHTTPException,
+    ObjectNotFoundException,
+    OrderItemNotFoundException,
+    OrderCannotModifiedHTTPException,
+    NotAllProductsAvailableHTTPException,
+    ProductAlreadyInOrderHTTPException,
+    NotEnoughProductHTTPException,
+    OrderCannotDeletedHTTPException,
+)
 from src.schemas.order_items import OrderItemsAdd, OrderItemsAddRequest, OrderItemUpdate
 from src.schemas.orders import OrdersUpdate
 from src.schemas.products import ProductUpdate
@@ -36,7 +43,9 @@ class OrderItemService(BaseService):
                 raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
         return item
 
-    async def add_items_to_order(self, order_id: int, items: list[OrderItemsAddRequest], user_id: int):
+    async def add_items_to_order(
+        self, order_id: int, items: list[OrderItemsAddRequest], user_id: int
+    ):
         """Добавить товары в существующий заказ"""
         order = await OrderService(self.db).get_order_with_check(order_id)
 
@@ -50,7 +59,9 @@ class OrderItemService(BaseService):
 
         added_items = []
         for item in items:
-            product = await ProductService(self.db).get_product_with_check(item.product_id)
+            product = await ProductService(self.db).get_product_with_check(
+                item.product_id
+            )
 
             # 1. Проверить наличие
             if product.stock_quantity < item.quantity:
@@ -58,8 +69,7 @@ class OrderItemService(BaseService):
 
             # 2. Проверить, не добавлен ли уже этот товар в заказ
             existing = await self.db.order_items.get_one_or_none(
-                order_id=order_id,
-                product_id=item.product_id
+                order_id=order_id, product_id=item.product_id
             )
             if existing is not None:
                 raise ProductAlreadyInOrderHTTPException(product.name)
@@ -67,7 +77,7 @@ class OrderItemService(BaseService):
             # 3. Обновить остатки
             update_data = ProductUpdate(
                 stock_quantity=product.stock_quantity - item.quantity,
-                updated_at=datetime.utcnow()
+                updated_at=datetime.utcnow(),
             )
             await self.db.products.exit(update_data, id=product.id, exclude_unset=True)
 
@@ -76,7 +86,7 @@ class OrderItemService(BaseService):
                 order_id=order_id,
                 product_id=product.id,
                 quantity=item.quantity,
-                final_price=product.price
+                final_price=product.price,
             )
             await self.db.order_items.add(order_item)
             added_items.append(order_item)
@@ -88,19 +98,22 @@ class OrderItemService(BaseService):
                 total_amount=order.total_amount + total,
             ),
             id=order_id,
-            exclude_unset=True
+            exclude_unset=True,
         )
         await self.db.commit()
         return {
             "message": f"Добавлено {len(added_items)} товаров",
             "total_added": total,
             "new_total": order.total_amount + total,
-            "order_id": order_id
+            "order_id": order_id,
         }
 
     async def update_order_item(
-            self, item_id: int, user_id: int, data: OrderItemUpdate,
-            exclude_unset: bool = False
+        self,
+        item_id: int,
+        user_id: int,
+        data: OrderItemUpdate,
+        exclude_unset: bool = False,
     ):
         item = await self.get_order_item_with_check(item_id)
         order = await OrderService(self.db).get_order_with_check(item.order_id)
@@ -125,7 +138,7 @@ class OrderItemService(BaseService):
         if stock_change != 0:
             update_data = ProductUpdate(
                 stock_quantity=product.stock_quantity + stock_change,
-                updated_at=datetime.utcnow()
+                updated_at=datetime.utcnow(),
             )
             await self.db.products.exit(update_data, id=product.id, exclude_unset=True)
 
@@ -151,7 +164,8 @@ class OrderItemService(BaseService):
         product = await ProductService(self.db).get_product_with_check(item.product_id)
         update_data = ProductUpdate(
             stock_quantity=product.stock_quantity + item.quantity,
-            updated_at=datetime.utcnow())
+            updated_at=datetime.utcnow(),
+        )
         await self.db.products.exit(update_data, id=product.id, exclude_unset=True)
         await self.db.order_items.delete(id=item_id)
         await self.recalculate_order_total(order.id)

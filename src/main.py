@@ -1,9 +1,11 @@
+# ruff: noqa: E402
 from contextlib import asynccontextmanager
 import sys
 from pathlib import Path
 import logging
 
 import uvicorn
+
 sys.path.append(str(Path(__file__).parent.parent))
 
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +26,7 @@ from src.api.products import router as router_product
 from src.api.reviews import router as router_review
 from src.api.roles import router as router_role
 from src.api.auth import router as router_auth
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,6 +51,5 @@ app.include_router(router_role)
 app.include_router(router_auth)
 
 
-
 if __name__ == "__main__":
-    uvicorn.run("main:app", host= "0.0.0.0", reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", reload=True)

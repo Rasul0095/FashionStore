@@ -13,11 +13,16 @@ class OrderOrm(Base):
     address_id: Mapped[int] = mapped_column(ForeignKey("addresses.id"))
 
     status: Mapped[str] = mapped_column(
-        Enum("pending", "paid", "shipped", "delivered", "cancelled", name="order_status"),
-        default="pending")
+        Enum(
+            "pending", "paid", "shipped", "delivered", "cancelled", name="order_status"
+        ),
+        default="pending",
+    )
 
     total_amount: Mapped[float] = mapped_column(CheckConstraint("total_amount >= 0"))
     shipping_method: Mapped[str]
     payment_method: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow, onupdate=datetime.utcnow
+    )

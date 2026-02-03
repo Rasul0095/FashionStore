@@ -6,8 +6,11 @@ from src.services.carts import CartService
 
 router = APIRouter(prefix="/carts", tags=["Корзина"])
 
+
 @router.get("")
-async def get_my_cart(db: DBDep, user_id: int = require_permission(Permission.MANAGE_CART)):
+async def get_my_cart(
+    db: DBDep, user_id: int = require_permission(Permission.MANAGE_CART)
+):
     try:
         return await CartService(db).get_my_cart(user_id)
     except CartNotExistsException:
@@ -24,7 +27,9 @@ async def add_cart(
 
 
 @router.delete("")
-async def delete_cart(db: DBDep, user_id: int = require_permission(Permission.MANAGE_CART)):
+async def delete_cart(
+    db: DBDep, user_id: int = require_permission(Permission.MANAGE_CART)
+):
     try:
         await CartService(db).delete_my_cart(user_id)
     except CartNotExistsException:

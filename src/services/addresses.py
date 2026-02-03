@@ -1,8 +1,17 @@
 from src.api.dependencies import UserIdDep
 from src.core.permissions import Permission
-from src.exceptions.exception import ObjectNotFoundException, AddressNotFoundException, PermissionDeniedHTTPException, \
-    AddressInUseHTTPException
-from src.schemas.addresses import AddressesAddRequest, AddressesAdd, AddressesPatch, AddressesUpdate
+from src.exceptions.exception import (
+    ObjectNotFoundException,
+    AddressNotFoundException,
+    PermissionDeniedHTTPException,
+    AddressInUseHTTPException,
+)
+from src.schemas.addresses import (
+    AddressesAddRequest,
+    AddressesAdd,
+    AddressesPatch,
+    AddressesUpdate,
+)
 from src.services.auth import AuthService
 from src.services.base import BaseService
 
@@ -37,14 +46,14 @@ class AddressService(BaseService):
         return await self.db.addresses.get_filtered(user_id=target_user_id)
 
     async def add_address(self, user_id: UserIdDep, data: AddressesAddRequest):
-        address_data = AddressesAdd(
-            user_id=user_id, **data.model_dump()
-        )
+        address_data = AddressesAdd(user_id=user_id, **data.model_dump())
         address = await self.db.addresses.add(address_data)
         await self.db.commit()
         return address
 
-    async def exit_address(self, address_id: int, user_id: UserIdDep, data: AddressesUpdate):
+    async def exit_address(
+        self, address_id: int, user_id: UserIdDep, data: AddressesUpdate
+    ):
         address = await self.get_address_with_check(address_id)
 
         if address.user_id == user_id:
@@ -53,7 +62,7 @@ class AddressService(BaseService):
                 data,
                 exclude_unset=True,
                 id=address_id,
-                user_id=user_id  # защита: только свой
+                user_id=user_id,  # защита: только свой
             )
             await self.db.commit()
             return
@@ -63,19 +72,16 @@ class AddressService(BaseService):
             raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
 
         # Админ меняет чужой адрес
-        await self.db.addresses.exit(
-            data,
-            exclude_unset=True,
-            id=address_id
-        )
+        await self.db.addresses.exit(data, exclude_unset=True, id=address_id)
         await self.db.commit()
 
-    async def partial_change_address(self,
+    async def partial_change_address(
+        self,
         address_id: int,
         user_id: UserIdDep,
         data: AddressesPatch,
-        exclude_unset: bool = False):
-
+        exclude_unset: bool = False,
+    ):
         address = await self.get_address_with_check(address_id)
 
         if address.user_id == user_id:
@@ -84,7 +90,7 @@ class AddressService(BaseService):
                 data,
                 exclude_unset=exclude_unset,
                 id=address_id,
-                user_id=user_id  # защита: только свой
+                user_id=user_id,  # защита: только свой
             )
             await self.db.commit()
             return
@@ -94,11 +100,7 @@ class AddressService(BaseService):
             raise PermissionDeniedHTTPException(Permission.VIEW_USERS.value)
 
         # Админ меняет чужой адрес
-        await self.db.addresses.exit(
-            data,
-            exclude_unset=exclude_unset,
-            id=address_id
-        )
+        await self.db.addresses.exit(data, exclude_unset=exclude_unset, id=address_id)
         await self.db.commit()
 
     async def delete_address(self, address_id: int, user_id: UserIdDep):

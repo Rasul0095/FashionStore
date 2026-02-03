@@ -21,4 +21,5 @@ __all__ = [
     "AddressOrm",
     "BrandOrm",
     "CartItemOrm",
-    "ProductOrm",]
+    "ProductOrm",
+]

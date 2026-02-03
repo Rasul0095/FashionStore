@@ -1,6 +1,9 @@
 from sqlalchemy import select, delete, func
 
-from src.exceptions.exception import  ObjectNotFoundException, UnableDeleteRoleHTTPException
+from src.exceptions.exception import (
+    ObjectNotFoundException,
+    UnableDeleteRoleHTTPException,
+)
 from src.models import RoleOrm, UserOrm
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import RoleDataMapper

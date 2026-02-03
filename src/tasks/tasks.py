@@ -9,7 +9,7 @@ def send_order_status_notification_task(data: dict):
         "processing": "Заказ в обработке",
         "shipped": "Заказ отправлен",
         "delivered": "Заказ доставлен",
-        "cancelled": "Заказ отменен"
+        "cancelled": "Заказ отменен",
     }
 
     message = f"""
@@ -24,4 +24,3 @@ def send_order_status_notification_task(data: dict):
         file.write(content)
 
     logging.info(f"Уведомление для заказа #{data['order_number']} отправлено")
-

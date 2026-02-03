@@ -2,15 +2,34 @@ from datetime import datetime
 import logging
 
 from src.core.permissions import Permission
-from src.exceptions.exception import PermissionDeniedHTTPException, ObjectNotFoundException, OrderNotFoundException, \
-    ErrorUpdatingBalancesHTTPException, InvalidStatusHTTPException, ProductOutOfStockHTTPException, \
-    OrderCannotModifiedHTTPException, OrderCannotDeletedHTTPException, CartEmptyHTTPException, \
- CancelledOrderHTTPException, DeliveredOrderHTTPException, AddressNotFoundException
-from src.repositories.utils import generate_order_number, check_product_availability_and_calculate_simple, \
-    get_update_stock_for_cart_query
+from src.exceptions.exception import (
+    PermissionDeniedHTTPException,
+    ObjectNotFoundException,
+    OrderNotFoundException,
+    ErrorUpdatingBalancesHTTPException,
+    InvalidStatusHTTPException,
+    ProductOutOfStockHTTPException,
+    OrderCannotModifiedHTTPException,
+    OrderCannotDeletedHTTPException,
+    CartEmptyHTTPException,
+    CancelledOrderHTTPException,
+    DeliveredOrderHTTPException,
+    AddressNotFoundException,
+)
+from src.repositories.utils import (
+    generate_order_number,
+    check_product_availability_and_calculate_simple,
+    get_update_stock_for_cart_query,
+)
 from src.schemas.order_items import OrderItemsAdd
-from src.schemas.orders import OrdersAddRequest, OrdersAdd, OrderStatusUpdateRequest, OrderStatusUpdate, OrdersPatch, \
-    OrdersPut
+from src.schemas.orders import (
+    OrdersAddRequest,
+    OrdersAdd,
+    OrderStatusUpdateRequest,
+    OrderStatusUpdate,
+    OrdersPatch,
+    OrdersPut,
+)
 from src.schemas.products import ProductUpdate
 from src.services.addresses import AddressService
 from src.services.auth import AuthService
@@ -56,7 +75,9 @@ class OrderService(BaseService):
 
         # 3.1. Двойная проверка наличия перед обновлением
         for item in cart_items:
-            product = await ProductService(self.db).get_product_with_check(item.product_id)
+            product = await ProductService(self.db).get_product_with_check(
+                item.product_id
+            )
             if product.stock_quantity < item.quantity:
                 await self.db.rollback()
                 raise ProductOutOfStockHTTPException(product.name)
@@ -76,12 +97,14 @@ class OrderService(BaseService):
 
         # 5. Создать order_items
         for item in cart_items:
-            product = await ProductService(self.db).get_product_with_check(item.product_id)
+            product = await ProductService(self.db).get_product_with_check(
+                item.product_id
+            )
             order_item = OrderItemsAdd(
                 order_id=order.id,
                 product_id=product.id,
                 quantity=item.quantity,
-                final_price=product.price
+                final_price=product.price,
             )
             await self.db.order_items.add(order_item)
 
@@ -100,7 +123,9 @@ class OrderService(BaseService):
         await self.db.commit()
         return order
 
-    async def change_order_status(self, order_id: int, status_data: OrderStatusUpdateRequest, user_id: int):
+    async def change_order_status(
+        self, order_id: int, status_data: OrderStatusUpdateRequest, user_id: int
+    ):
         order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
             permissions = await AuthService(self.db).get_user_permissions(user_id)
@@ -139,8 +164,9 @@ class OrderService(BaseService):
             "order_id": order_id,
             "old_status": old_status,  # старый статус
             "new_status": status_data.status,  # новый статус
-            "message": "Статус обновлен"
+            "message": "Статус обновлен",
         }
+
     async def exit_order(self, order_id: int, user_id: int, data: OrdersPut):
         order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
@@ -155,7 +181,9 @@ class OrderService(BaseService):
         await self.db.commit()
         return order
 
-    async def partial_change_order(self, order_id: int, user_id: int, data: OrdersPatch):
+    async def partial_change_order(
+        self, order_id: int, user_id: int, data: OrdersPatch
+    ):
         order = await self.get_order_with_check(order_id)
         if order.user_id != user_id:
             permissions = await AuthService(self.db).get_user_permissions(user_id)
@@ -181,10 +209,13 @@ class OrderService(BaseService):
 
         order_items = await self.db.order_items.get_filtered(order_id=order_id)
         for item in order_items:
-            product = await ProductService(self.db).get_product_with_check(item.product_id)
+            product = await ProductService(self.db).get_product_with_check(
+                item.product_id
+            )
             update_data = ProductUpdate(
                 stock_quantity=product.stock_quantity + item.quantity,
-                updated_at=datetime.utcnow())
+                updated_at=datetime.utcnow(),
+            )
             await self.db.products.edit(update_data, id=product.id, exclude_unset=True)
 
         # Удалить связанные order_items
@@ -207,7 +238,7 @@ class OrderService(BaseService):
             "old_status": order.status,
             "new_status": new_status,
             "total_amount": order.total_amount,
-            "created_at": order.created_at.isoformat() if order.created_at else None
+            "created_at": order.created_at.isoformat() if order.created_at else None,
         }
         try:
             send_order_status_notification_task.delay(notification_data)

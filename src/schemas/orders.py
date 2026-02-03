@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 from datetime import datetime
 
+
 class OrderStatus(str, Enum):
     PENDING = "pending"
     PAID = "paid"
@@ -9,10 +10,12 @@ class OrderStatus(str, Enum):
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
 
+
 class OrdersAddRequest(BaseModel):
     status: OrderStatus
     shipping_method: str
     payment_method: str
+
 
 class OrdersAdd(BaseModel):
     user_id: int
@@ -25,23 +28,29 @@ class OrdersAdd(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class Order(OrdersAdd):
     id: int
+
 
 class OrdersUpdate(BaseModel):
     total_amount: float
 
+
 class OrderStatusUpdateRequest(BaseModel):
     status: str
+
 
 class OrderStatusUpdate(BaseModel):
     status: str
     updated_at: datetime
 
+
 class OrdersPut(BaseModel):
     total_amount: float
     shipping_method: str
     payment_method: str
+
 
 class OrdersPatch(BaseModel):
     total_amount: float | None = Field(None)

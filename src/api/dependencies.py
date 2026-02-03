@@ -3,8 +3,12 @@ from fastapi import Depends, Request, Query
 from pydantic import BaseModel
 
 from src.core.permissions import Permission
-from src.exceptions.exception import NoAccessTokenHTTPException, IncorrectTokenException, IncorrectTokenHTTPException, \
-    PermissionDeniedHTTPException
+from src.exceptions.exception import (
+    NoAccessTokenHTTPException,
+    IncorrectTokenException,
+    IncorrectTokenHTTPException,
+    PermissionDeniedHTTPException,
+)
 from src.utils.db_manager import DBManager
 from src.database import async_session_maker
 from src.services.auth import AuthService
@@ -17,11 +21,13 @@ class PaginationParams(BaseModel):
 
 PaginationDep = Annotated[PaginationParams, Depends()]
 
+
 def get_token(request: Request) -> str:
     token = request.cookies.get("access_token", None)
     if not token:
         raise NoAccessTokenHTTPException
     return token
+
 
 def get_current_user_id(token: str = Depends(get_token)) -> int:
     try:
@@ -33,24 +39,27 @@ def get_current_user_id(token: str = Depends(get_token)) -> int:
 
 UserIdDep = Annotated[int, Depends(get_current_user_id)]
 
+
 async def get_db():
     async with DBManager(session_factory=async_session_maker) as db:
         yield db
 
+
 DBDep = Annotated[DBManager, Depends(get_db)]
+
 
 def require_permission(permission: Permission):
     """Декоратор для проверки разрешений"""
+
     async def dependency(
-        user_id: UserIdDep,
-        permissions_dict: dict = Depends(get_user_permissions)
+        user_id: UserIdDep, permissions_dict: dict = Depends(get_user_permissions)
     ):
         if not permissions_dict.get(permission.value, False):
             raise PermissionDeniedHTTPException(permission.value)
         return user_id
+
     return Depends(dependency)
 
 
 async def get_user_permissions(db: DBDep, user_id: UserIdDep) -> dict:
     return await AuthService(db).get_user_permissions(user_id=user_id)
-
